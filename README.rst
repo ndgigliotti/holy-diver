@@ -1,16 +1,16 @@
 ==========
-Deepconfig
+dot-config
 ==========
 
 
-.. image:: https://img.shields.io/pypi/v/deepconfig.svg
-        :target: https://pypi.python.org/pypi/deepconfig
+.. image:: https://img.shields.io/pypi/v/dot-config.svg
+        :target: https://pypi.python.org/pypi/dot-config
 
-.. image:: https://img.shields.io/travis/ndgigliotti/deepconfig.svg
-        :target: https://travis-ci.com/ndgigliotti/deepconfig
+.. image:: https://img.shields.io/travis/ndgigliotti/dot-config.svg
+        :target: https://travis-ci.com/ndgigliotti/dot-config
 
-.. image:: https://readthedocs.org/projects/deepconfig/badge/?version=latest
-        :target: https://deepconfig.readthedocs.io/en/latest/?version=latest
+.. image:: https://readthedocs.org/projects/dot-config/badge/?version=latest
+        :target: https://dot-config.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
 
@@ -20,7 +20,7 @@ A simple, comfortable, dot-accessible configuration manager for deeply nested co
 
 
 * Free software: MIT license
-* Documentation: https://deepconfig.readthedocs.io.
+* Documentation: https://dot-config.readthedocs.io.
 
 
 Features

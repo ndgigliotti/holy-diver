@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use Deepconfig in a project::
+To use dot-config in a project::
 
-    import deepconfig
+    import dot-config

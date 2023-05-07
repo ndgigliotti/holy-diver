@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=deepconfig
+set SPHINXPROJ=dot-config
 
 if "%1" == "" goto help
 

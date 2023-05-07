@@ -92,7 +92,7 @@ class ConfigManager(UserDict):
 
     def deep_keys(self) -> List[str]:
         """Return a list of all keys using dot notation."""
-        from deepconfig.config_list_manager import ConfigListManager
+        from dot_config.config_list_manager import ConfigListManager
 
         keys = []
         for k, v in self.convert().items():
@@ -162,7 +162,7 @@ class ConfigManager(UserDict):
             Converted item.
 
         """
-        from deepconfig.config_list_manager import ConfigListManager
+        from dot_config.config_list_manager import ConfigListManager
 
         if isinstance(item, dict):
             return type(self)({k: self.convert_item(v) for k, v in item.items()})
@@ -197,7 +197,7 @@ class ConfigManager(UserDict):
             Deconverted item.
 
         """
-        from deepconfig.config_list_manager import ConfigListManager
+        from dot_config.config_list_manager import ConfigListManager
 
         if item is None:
             item = self

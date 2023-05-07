@@ -1,1 +1,1 @@
-"""Unit test package for deepconfig."""
+"""Unit test package for dot-config."""

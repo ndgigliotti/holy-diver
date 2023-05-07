@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `deepconfig` package."""
+"""Tests for `dot_config` package."""
 
 import json
 import os
@@ -11,7 +11,7 @@ from typing import Sequence
 import pytest
 import yaml
 
-from deepconfig import ConfigManager
+from dot_config import ConfigManager
 
 # Test data
 TEST_DEFAULTS = {
@@ -284,7 +284,7 @@ def test_from_dict():
 
 # Replace "path/to/yaml" and "path/to/json" with the actual paths to your test files
 def test_from_yaml():
-    with TemporaryDirectory(prefix="test_deepconfig_") as d:
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary YAML file
         fname = os.path.join(d, "config.yaml")
         with open(fname, "w") as f:
@@ -314,7 +314,7 @@ def test_from_yaml():
 
 
 def test_from_json():
-    with TemporaryDirectory(prefix="test_deepconfig_") as d:
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary JSON file
         fname = os.path.join(d, "config.json")
         with open(fname, "w") as f:

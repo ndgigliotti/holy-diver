@@ -1,4 +1,4 @@
-Welcome to Deepconfig's documentation!
+Welcome to dot-config's documentation!
 ======================================
 
 .. toctree::

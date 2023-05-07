@@ -1,4 +1,4 @@
-* Deepconfig version:
+* dot-config version:
 * Python version:
 * Operating System:
 

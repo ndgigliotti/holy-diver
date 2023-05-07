@@ -37,7 +37,7 @@ class ConfigListManager(UserList):
             Converted item.
 
         """
-        from deepconfig.config_manager import ConfigManager
+        from dot_config.config_manager import ConfigManager
 
         if item is None:
             item = self.data
@@ -72,7 +72,7 @@ class ConfigListManager(UserList):
             Deconverted item.
 
         """
-        from deepconfig.config_manager import ConfigManager
+        from dot_config.config_manager import ConfigManager
 
         if isinstance(item, ConfigManager):
             return {k: self.deconvert_item(v) for k, v in item.items()}
@@ -100,7 +100,7 @@ class ConfigListManager(UserList):
             List of all keys in the configuration tree.
 
         """
-        from deepconfig.config_manager import ConfigManager
+        from dot_config.config_manager import ConfigManager
 
         keys = []
         self = self.convert()
