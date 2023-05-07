@@ -4,4 +4,4 @@ __author__ = """Nick Gigliotti"""
 __email__ = "ndgigliotti@gmail.com"
 __version__ = "0.1.0"
 
-from deepconfig.deepconfig import ConfigManager
+from deepconfig.config_manager import ConfigManager

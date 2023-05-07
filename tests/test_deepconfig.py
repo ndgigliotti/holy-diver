@@ -11,7 +11,7 @@ from typing import Sequence
 import pytest
 import yaml
 
-from deepconfig.deepconfig import ConfigManager
+from deepconfig import ConfigManager
 
 # Test data
 TEST_DEFAULTS = {

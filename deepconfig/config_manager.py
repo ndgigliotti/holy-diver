@@ -1,11 +1,9 @@
-"""Main module."""
-import datetime
+"""Module for ConfigManager class and related functions."""
 import json
 import logging
 import re
 import warnings
 from collections import UserDict
-from functools import cached_property
 from typing import Any, Iterable, List, Optional
 
 import yaml
@@ -83,10 +81,7 @@ class ConfigManager(UserDict):
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute or item."""
-        if is_protected(name):
-            return super().__getattribute__(name)
-        else:
-            return self[name]
+        return self[name]
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute or item."""
