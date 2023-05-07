@@ -24,7 +24,6 @@ PROTECTED_KEYS = frozenset(
         "__setstate__",
     ]
     + dir(UserDict())
-    + dir({})
 )
 
 
