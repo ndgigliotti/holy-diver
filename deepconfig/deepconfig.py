@@ -5,6 +5,7 @@ import logging
 import re
 import warnings
 from collections import UserDict
+from functools import cached_property
 from typing import Any, Iterable, List, Optional
 
 import yaml
@@ -27,10 +28,13 @@ PROTECTED_KEYS = frozenset(
 )
 
 
-def check_keys(keys: Iterable[str]) -> None:
+def check_keys(
+    keys: Iterable[str], reserved: Optional[Iterable[str]] = PROTECTED_KEYS
+) -> None:
     """Check that keys are syntactically valid and not reserved."""
     alphanum = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
     dunder = re.compile(r"^__.*__$")
+    reserved = set() if reserved is None else set(reserved)
     for key in keys:
         if alphanum.fullmatch(key) is None:
             raise ValueError(
@@ -42,28 +46,31 @@ def check_keys(keys: Iterable[str]) -> None:
                 f"Key '{key}' is an invalid attribute name "
                 f"matching the dunder pattern r'{dunder.pattern}'."
             )
-        if key in PROTECTED_KEYS:
+        if key in reserved:
             raise ValueError(f"Key '{key}' is a reserved attribute or method name.")
 
 
-class ConfigManager(UserDict):
-    _protected_attrs = PROTECTED_KEYS
+def is_protected(key: str):
+    return key in PROTECTED_KEYS or re.fullmatch(r"__\w+__", key) is not None
 
+
+class ConfigManager(UserDict):
     def __init__(
         self,
-        dict_: dict = None,
+        dict: dict = None,
         defaults: dict = None,
         required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
     ) -> None:
         self.data = {}
         if defaults is not None:
             check_keys(defaults.keys())
             self.data.update(defaults)
-        if dict_ is not None:
-            check_keys(dict_.keys())
-            self.data.update(dict_)
+        if dict is not None:
+            check_keys(dict.keys())
+            self.data.update(dict)
         if required_keys is not None:
-            self.check_required_keys(required_keys)
+            self.check_required_keys(required_keys, if_missing=if_missing)
 
     def __getitem__(self, key: str) -> Any:
         """Get an item."""
@@ -76,14 +83,14 @@ class ConfigManager(UserDict):
 
     def __getattr__(self, name: str) -> Any:
         """Get an attribute or item."""
-        if name in self._protected_attrs:
-            return super().__getattr__(name)
+        if is_protected(name):
+            return super().__getattribute__(name)
         else:
             return self[name]
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute or item."""
-        if name in self._protected_attrs:
+        if is_protected(name):
             super().__setattr__(name, value)
         else:
             self[name] = value
@@ -100,6 +107,8 @@ class ConfigManager(UserDict):
     @property
     def depth(self) -> int:
         """Return the depth of the configuration tree."""
+        raise NotImplementedError
+        # Lists are not yet supported by `deep_keys`
         return max([k.count(".") for k in self.deep_keys()])
 
     def check_required_keys(
@@ -207,27 +216,41 @@ class ConfigManager(UserDict):
 
     @classmethod
     def from_dict(
-        cls, dict_: dict, defaults: dict = None, required_keys: Iterable[str] = None
+        cls,
+        dict: dict = None,
+        defaults: dict = None,
+        required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
     ) -> "ConfigManager":
         """Create nested ConfigManagers from a dictionary.
 
         Parameters
         ----------
-        dict_ : dict
-            Dictionary to convert.
+        dict : dict, optional
+            Dictionary to convert, by default None.
         defaults : dict, optional
             Default values to add to the configuration, by default None.
         required_keys : Iterable[str], optional
             Keys that must be present in the configuration, by default None.
-
+        if_missing : str, optional
+            Action to take if any keys are missing, by default "raise". Options are:
+                * "raise": raise a KeyError
+                * "warn": raise a warning
 
         Returns
         -------
         ConfigManager
             Nested ConfigManagers created from the dict.
 
+        Raises
+        ------
+        KeyError
+            If `if_missing` is "raise" and any keys are missing.
+
         """
-        return cls(dict_, defaults=defaults, required_keys=required_keys).convert()
+        return cls(
+            dict, defaults=defaults, required_keys=required_keys, if_missing=if_missing
+        ).convert()
 
     @classmethod
     def from_yaml(
@@ -235,6 +258,7 @@ class ConfigManager(UserDict):
         path: str,
         defaults: dict = None,
         required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
         safe: bool = False,
     ) -> "ConfigManager":
         """Create nested ConfigManagers from a YAML file.
@@ -247,6 +271,10 @@ class ConfigManager(UserDict):
             Default values to add to the configuration, by default None.
         required_keys : Iterable[str], optional
             Keys that must be present in the configuration, by default None.
+        if_missing : str, optional
+            Action to take if any keys are missing, by default "raise". Options are:
+                * "raise": raise a KeyError
+                * "warn": raise a warning
         safe : bool, optional
             Whether to use safe loading, by default False.
 
@@ -255,15 +283,26 @@ class ConfigManager(UserDict):
         ConfigManager
             Nested ConfigManagers created from the YAML file.
 
+        Raises
+        ------
+        KeyError
+            If `if_missing` is "raise" and any keys are missing.
+
         """
         load = yaml.safe_load if safe else yaml.full_load
         with open(path, "r") as f:
             data = load(f)
-        return cls(data, defaults=defaults, required_keys=required_keys).convert()
+        return cls(
+            data, defaults=defaults, required_keys=required_keys, if_missing=if_missing
+        ).convert()
 
     @classmethod
     def from_json(
-        cls, path: str, defaults: dict = None, required_keys: Iterable[str] = None
+        cls,
+        path: str,
+        defaults: dict = None,
+        required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
     ) -> "ConfigManager":
         """Create nested ConfigManagers from a JSON file.
 
@@ -275,13 +314,24 @@ class ConfigManager(UserDict):
             Default values to add to the configuration, by default None.
         required_keys : Iterable[str], optional
             Keys that must be present in the configuration, by default None.
+        if_missing : str, optional
+            Action to take if any keys are missing, by default "raise". Options are:
+                * "raise": raise a KeyError
+                * "warn": raise a warning
 
         Returns
         -------
         ConfigManager
             Nested ConfigManagers created from the JSON file.
 
+        Raises
+        ------
+        KeyError
+            If `if_missing` is "raise" and any keys are missing.
+
         """
         with open(path, "r") as f:
             data = json.load(f)
-        return cls(data, defaults=defaults, required_keys=required_keys).convert()
+        return cls(
+            data, defaults=defaults, required_keys=required_keys, if_missing=if_missing
+        ).convert()
