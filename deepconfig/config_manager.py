@@ -92,18 +92,18 @@ class ConfigManager(UserDict):
 
     def deep_keys(self) -> List[str]:
         """Return a list of all keys using dot notation."""
+        from deepconfig.config_list_manager import ConfigListManager
+
         keys = []
         for k, v in self.convert().items():
             keys.append(k)
-            if isinstance(v, type(self)):
+            if isinstance(v, (type(self), ConfigListManager)):
                 keys.extend([f"{k}.{i}" for i in v.deep_keys()])
         return keys
 
     @property
     def depth(self) -> int:
         """Return the depth of the configuration tree."""
-        raise NotImplementedError
-        # Lists are not yet supported by `deep_keys`
         return max([k.count(".") for k in self.deep_keys()])
 
     def check_required_keys(
@@ -148,8 +148,8 @@ class ConfigManager(UserDict):
 
         return missing_keys
 
-    def convert(self, item: Optional[Any] = None) -> Any:
-        """Recursively convert nested dicts to nested ConfigManagers.
+    def convert_item(self, item: Any) -> Any:
+        """Recursively convert nested dicts and lists to nested managers.
 
         Parameters
         ----------
@@ -162,21 +162,34 @@ class ConfigManager(UserDict):
             Converted item.
 
         """
-        if item is None:
-            item = self.data
+        from deepconfig.config_list_manager import ConfigListManager
+
         if isinstance(item, dict):
-            return type(self)({k: self.convert(v) for k, v in item.items()})
+            return type(self)({k: self.convert_item(v) for k, v in item.items()})
         if isinstance(item, (list, tuple, set)):
-            return [self.convert(i) for i in item]
+            return ConfigListManager([self.convert_item(x) for x in item])
         return item
 
-    def deconvert(self, item: Optional[Any] = None) -> Any:
-        """Recursively deconvert nested ConfigManagers to nested dicts.
+    def convert(self) -> "ConfigManager":
+        """Recursively convert nested dicts and lists to nested managers.
+
+        Returns a copy of self.
+
+        Returns
+        -------
+        ConfigManager
+            New hierarchy of managers and values.
+
+        """
+        return self.convert_item(self.data)
+
+    def deconvert_item(self, item: Any) -> Any:
+        """Recursively deconvert nested managers to nested dicts and lists.
 
         Parameters
         ----------
         item : Optional[Any], optional
-            Item to deconvert, by default None. If None, the ConfigManager itself is deconverted.
+            Item to deconvert.
 
         Returns
         -------
@@ -184,13 +197,28 @@ class ConfigManager(UserDict):
             Deconverted item.
 
         """
+        from deepconfig.config_list_manager import ConfigListManager
+
         if item is None:
             item = self
         if isinstance(item, type(self)):
-            return {k: self.deconvert(v) for k, v in item.items()}
-        if isinstance(item, (list, tuple, set)):
-            return [self.deconvert(i) for i in item]
+            return {k: self.deconvert_item(v) for k, v in item.items()}
+        if isinstance(item, (ConfigListManager, tuple, set)):
+            return [self.deconvert_item(x) for x in item]
         return item
+
+    def deconvert(self) -> dict:
+        """Recursively deconvert nested managers to nested dicts and lists.
+
+        Returns a copy.
+
+        Returns
+        -------
+        dict
+            Deconverted hierarchy of dicts and lists.
+
+        """
+        return self.deconvert_item(self)
 
     def to_string(self) -> str:
         """Convert the ConfigManager to a string.

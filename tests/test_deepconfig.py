@@ -24,7 +24,7 @@ TEST_DICT = {
     "i": {"h": 7, "j": -3, "m": {"o": -5, "p": -2, "q": [1, {"r": 6, "s": 7}]}},
     "c": 4,
 }
-TEST_BAD_KEYS = {"a": 1, "b": 2, "c.d.e": 3, "~3.#$@": 4, "8a": 6, "deep_keys": 7}
+TEST_BAD_KEYS = ["c.d.e", "~3.#$@", "8a", "deep_keys", "convert", "deconvert"]
 TEST_DEEP_KEYS = {
     "a",
     "b",
@@ -33,6 +33,10 @@ TEST_DEEP_KEYS = {
     "d.f",
     "d.f.g",
     "d.h",
+    "d.h._0",
+    "d.h._1",
+    "d.h._2.i",
+    "d.h._2.j",
     "i",
     "i.h",
     "i.j",
@@ -40,6 +44,9 @@ TEST_DEEP_KEYS = {
     "i.m.o",
     "i.m.p",
     "i.m.q",
+    "i.m.q._0",
+    "i.m.q._1.r",
+    "i.m.q._1.s",
     "c",
 }
 TEST_REQUIRED_KEYS_FAIL = ["a", "b", "d", "z", "d.e", "d.f.g", "d.z", "d.z.x"]
@@ -87,9 +94,16 @@ def test_init_with_dict():
     assert cm["c"] == 4
 
 
+def test_null_values():
+    dict = {"a": None, "b": 3, "c": {"d": None, "e": 5}}
+    cm = ConfigManager(dict=dict)
+    assert cm["a"] is None
+
+
 def test_init_with_bad_keys():
-    with pytest.raises(ValueError, match=BAD_KEY_MSG):
-        ConfigManager(dict=TEST_BAD_KEYS)
+    for k in TEST_BAD_KEYS:
+        with pytest.raises(ValueError, match=BAD_KEY_MSG):
+            ConfigManager(dict={k: 0})
 
 
 def test_init_with_defaults_and_dict():
