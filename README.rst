@@ -78,7 +78,10 @@ Here's a quick example of how to use the ``ConfigManager`` class:
 ConfigListManager
 -----------------
 
-Here's a quick example of how to use the ``ConfigListManager`` class:
+Here's a quick example of how to use the ``ConfigListManager`` class.
+Items in ``ConfigListManager`` can be accessed using normal indexing and
+dot notation interchangeably. All indices can be accessed entirely with dot notation,
+which allows for easier handling of nested keys and data structures.
 
 .. code-block:: python
 
@@ -94,6 +97,14 @@ Here's a quick example of how to use the ``ConfigListManager`` class:
     # Access elements using indices and dot notation for nested keys
     print(config_list[0].name)  # Output: Alice
     print(config_list[1].age)   # Output: 25
+
+    # Or, do it all with dot notation, if you prefer
+    print(config_list._0.name) # Output: Alice
+    print(config_list._1.age)  # Output: 25
+
+    # You can see all the nested keys using the `deep_keys()` method
+    print(config_list.deep_keys())
+    # Output: ['_0', '_1', '_0.name', '_0.age', '_1.name', '_1.age']
 
 Loading from a Configuration File
 ---------------------------------
