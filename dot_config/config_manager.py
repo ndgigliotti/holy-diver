@@ -80,7 +80,7 @@ class ConfigManager(UserDict):
         warnings.warn(f"Configuration key '{key}' set to {item} after initialization!")
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute or item."""
+        """Get an item."""
         return self[name]
 
     def __setattr__(self, name: str, value: Any) -> None:

@@ -21,12 +21,8 @@ class ConfigListManager(UserList):
         warnings.warn(f"Configuration item {i} set to {item} after initialization!")
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute or item."""
-        if self._attr_index_pattern.fullmatch(name):
-            # return self.convert().data[int(name[1:])]
-            return self[int(name[1:])]
-        else:
-            return super().__getattribute__(name)
+        """Get an item."""
+        return self[int(name[1:])]
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute or item."""
