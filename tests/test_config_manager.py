@@ -6,12 +6,11 @@ import json
 import os
 import warnings
 from tempfile import TemporaryDirectory
-from typing import Sequence
 
 import pytest
 import yaml
 
-from dot_config import ConfigManager
+from dot_config import ConfigListManager, ConfigManager
 
 # Test data
 TEST_DEFAULTS = {
@@ -24,6 +23,7 @@ TEST_DICT = {
     "i": {"h": 7, "j": -3, "m": {"o": -5, "p": -2, "q": [1, {"r": 6, "s": 7}]}},
     "c": 4,
 }
+TEST_LIST = [1, 2, {"a": 3}, [4, {"b": 5}]]
 TEST_BAD_KEYS = ["c.d.e", "~3.#$@", "8a", "deep_keys", "convert", "deconvert"]
 TEST_DEEP_KEYS = {
     "a",
@@ -35,6 +35,7 @@ TEST_DEEP_KEYS = {
     "d.h",
     "d.h._0",
     "d.h._1",
+    "d.h._2",
     "d.h._2.i",
     "d.h._2.j",
     "i",
@@ -45,6 +46,7 @@ TEST_DEEP_KEYS = {
     "i.m.p",
     "i.m.q",
     "i.m.q._0",
+    "i.m.q._1",
     "i.m.q._1.r",
     "i.m.q._1.s",
     "c",
@@ -65,7 +67,8 @@ TEST_PROTECTED_KEYS_FALSE = ["reports", "plotting", "logging", "models", "level_
 # Error and warning messages
 BAD_KEY_MSG = r"Key '.+' is"
 SETITEM_WARNING_MSG = r"Configuration key '[a-z]' set to -?[0-9]+ after initialization!"
-MISSING_KEYS_MSG = r"Configuration is missing required keys:"
+MISSING_KEYS_MSG = "Configuration is missing required keys:"
+LOAD_WRONG_TYPE_MSG = "must encode a dict, not a list"
 
 
 # Test cases
@@ -174,8 +177,8 @@ def test_convert():
     assert isinstance(cm["i"], ConfigManager)
     assert isinstance(cm["i"]["m"], ConfigManager)
     assert isinstance(cm["i"]["m"]["q"][1], ConfigManager)
-    assert isinstance(cm["i"]["m"]["q"], Sequence)
-    assert isinstance(cm["d"]["h"], Sequence)
+    assert isinstance(cm["i"]["m"]["q"], ConfigListManager)
+    assert isinstance(cm["d"]["h"], ConfigListManager)
 
 
 def check_conversion_and_values(cm):
@@ -186,8 +189,8 @@ def check_conversion_and_values(cm):
     assert isinstance(cm.i, ConfigManager)
     assert isinstance(cm.i.m, ConfigManager)
     assert isinstance(cm.i.m.q[1], ConfigManager)
-    assert isinstance(cm.i.m.q, Sequence)
-    assert isinstance(cm.d.h, Sequence)
+    assert isinstance(cm.i.m.q, ConfigListManager)
+    assert isinstance(cm.d.h, ConfigListManager)
     assert cm.a == 1
     assert cm.b == 3
     assert cm.d.e == 3
@@ -227,6 +230,11 @@ def test_setattr_nested():
 def test_deep_keys():
     cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     assert set(cm.deep_keys()) == TEST_DEEP_KEYS
+
+
+def test_depth():
+    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    assert cm.depth == 4
 
 
 def test_check_required_keys_raise():
@@ -286,28 +294,40 @@ def test_from_dict():
 def test_from_yaml():
     with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary YAML file
-        fname = os.path.join(d, "config.yaml")
-        with open(fname, "w") as f:
+        good_fname = os.path.join(d, "config.yaml")
+        bad_fname = os.path.join(d, "bad_config.yaml")
+        with open(good_fname, "w") as f, open(bad_fname, "w") as g:
             yaml.dump(TEST_DICT, f)
-        # Load the YAML file and trigger error
+            yaml.dump(TEST_LIST, g)
+
+        # Load the listlike YAML file and trigger error
+        with pytest.raises(TypeError, match=LOAD_WRONG_TYPE_MSG):
+            ConfigManager.from_yaml(
+                bad_fname,
+                defaults=TEST_DEFAULTS,
+                required_keys=TEST_REQUIRED_KEYS_PASS,
+                if_missing="raise",
+            )
+
+        # Load the correct YAML file and trigger error
         with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
             ConfigManager.from_yaml(
-                fname,
+                good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
                 if_missing="raise",
             )
-        # Load the YAML file and trigger warning
+        # Load the correct YAML file and trigger warning
         with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
             ConfigManager.from_yaml(
-                fname,
+                good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
                 if_missing="warn",
             )
-        # Load the YAML file for real
+        # Load the correct YAML file for real
         cm = ConfigManager.from_yaml(
-            fname, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
+            good_fname, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
         )
     # Check the recursive conversion and loaded values
     check_conversion_and_values(cm)
@@ -316,28 +336,39 @@ def test_from_yaml():
 def test_from_json():
     with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary JSON file
-        fname = os.path.join(d, "config.json")
-        with open(fname, "w") as f:
+        good_fname = os.path.join(d, "config.json")
+        bad_fname = os.path.join(d, "bad_config.json")
+        with open(good_fname, "w") as f, open(bad_fname, "w") as g:
             json.dump(TEST_DICT, f)
-        # Load the JSON file and trigger error
+            json.dump(TEST_LIST, g)
+
+        # Load the listlike JSON file and trigger error
+        with pytest.raises(TypeError, match=LOAD_WRONG_TYPE_MSG):
+            ConfigManager.from_json(
+                bad_fname,
+                defaults=TEST_DEFAULTS,
+                required_keys=TEST_REQUIRED_KEYS_PASS,
+                if_missing="raise",
+            )
+        # Load the correct JSON file and trigger error
         with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
             ConfigManager.from_json(
-                fname,
+                good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
                 if_missing="raise",
             )
-        # Load the JSON file and trigger warning
+        # Load the correct JSON file and trigger warning
         with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
             ConfigManager.from_json(
-                fname,
+                good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
                 if_missing="warn",
             )
-        # Load the JSON file for real
+        # Load the correct JSON file for real
         cm = ConfigManager.from_json(
-            fname, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
+            good_fname, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
         )
     # Check the recursive conversion and loaded values
     check_conversion_and_values(cm)

@@ -310,11 +310,18 @@ class ConfigManager(UserDict):
         ------
         KeyError
             If `if_missing` is "raise" and any keys are missing.
+        TypeError
+            If the YAML file encodes a list.
 
         """
         load = yaml.safe_load if safe else yaml.full_load
         with open(path, "r") as f:
             data = load(f)
+        if isinstance(data, list):
+            raise TypeError(
+                "YAML file must encode a dict, not a list. "
+                "Use `ConfigListManager.from_yaml` instead."
+            )
         return cls(
             data, defaults=defaults, required_keys=required_keys, if_missing=if_missing
         ).convert()
@@ -351,10 +358,17 @@ class ConfigManager(UserDict):
         ------
         KeyError
             If `if_missing` is "raise" and any keys are missing.
+        TypeError
+            If the JSON file encodes a list.
 
         """
         with open(path, "r") as f:
             data = json.load(f)
+        if isinstance(data, list):
+            raise TypeError(
+                "JSON file must encode a dict, not a list. "
+                "Use `ConfigListManager.from_json` instead."
+            )
         return cls(
             data, defaults=defaults, required_keys=required_keys, if_missing=if_missing
         ).convert()
