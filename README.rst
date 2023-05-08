@@ -33,7 +33,7 @@ Main Features
 
 - Easy-to-use API for managing configuration data
 - Recursively dot-accessible dictionary-like ``ConfigManager`` class
-- List-like counterpart ``ConfigListManager`` with recursively dot-accessible elements
+- Recursively dot-accessible list-like ``ConfigListManager`` class
 - Support for JSON and YAML configuration file formats
 
 Installation
