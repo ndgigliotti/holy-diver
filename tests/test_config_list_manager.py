@@ -175,3 +175,29 @@ def test_from_json():
         # Load the json file
         clm = ConfigListManager.from_json(good_fname)
     check_conversion_and_values(clm)
+
+
+def test_to_yaml():
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
+        # Prepare a temporary YAML file
+        fname = os.path.join(d, "config.yaml")
+        clm = ConfigListManager(TEST_LIST)
+        clm.to_yaml(fname)
+        assert os.path.isfile(fname)
+        with open(fname) as f:
+            loaded = yaml.safe_load(f)
+        assert loaded == clm
+        assert loaded == TEST_LIST
+
+
+def test_to_json():
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
+        # Prepare a temporary JSON file
+        fname = os.path.join(d, "config.json")
+        clm = ConfigListManager(TEST_LIST)
+        clm.to_json(fname)
+        assert os.path.isfile(fname)
+        with open(fname) as f:
+            loaded = json.load(f)
+        assert loaded == clm
+        assert loaded == TEST_LIST

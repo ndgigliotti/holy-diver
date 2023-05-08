@@ -17,15 +17,15 @@ dot-config
         :target: https://dot-config.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
-``dot-config`` is a Python library that provides a simple, 
+``dot-config`` is a Python library that provides a simple,
 recursively dot-accessible configuration manager for deeply nested configuration files.
-It also has some other convenient features, such handling default settings, 
-checking for the presence of required (possibly nested) keys, and initializing directly 
-from YAML and JSON files. It employs two main classes: ``ConfigManager`` and 
-``ConfigListManager``. ``ConfigManager`` is a dictionary-like class that allows you to 
-access nested keys using dot notation (i.e. recursively accessing keys as if they were 
-attributes). ``ConfigListManager`` is a list-like class that allows you to access 
-elements using indices and dot notation for nested keys. Both classes work together in harmony 
+It also has some other convenient features, such handling default settings,
+checking for the presence of required keys, and initializing directly from YAML, JSON,
+and TOML files. It employs two main classes: ``ConfigManager`` and
+``ConfigListManager``. ``ConfigManager`` is a dictionary-like class that allows you to
+access nested keys using dot notation (i.e. recursively accessing keys as if they were
+attributes). ``ConfigListManager`` is a list-like class that allows you to access
+elements using indices and dot notation for nested keys. Both classes work together in harmony
 to make it as easy as possible to manage deeply nested configuration data.
 
 Main Features
@@ -34,7 +34,7 @@ Main Features
 - Easy-to-use API for managing configuration data
 - Recursively dot-accessible dictionary-like ``ConfigManager`` class
 - Recursively dot-accessible list-like ``ConfigListManager`` class
-- Support for JSON and YAML configuration file formats
+- Support for YAML, JSON, and TOML configuration file formats
 
 Installation
 ============
@@ -127,23 +127,30 @@ Loading a JSON file works in much the same way:
 
 Alternative Constructors
 ------------------------
-It's generally recommended to use one of the ``from_*()`` constructors 
-(e.g. ``from_dict()``, ``from_yaml()``) to create either a ``ConfigManager`` 
-or ``ConfigListManager``, because these class methods automatically 
-convert nested dictionaries and lists to manager classes. It doesn't affect the 
-functionality much if you use the main constructor, but it may cost you a few 
-milliseconds of processing time down the road, as more conversions must be 
+It's generally recommended to use one of the ``from_*()`` constructors
+(e.g. ``from_dict()``, ``from_yaml()``) to create either a ``ConfigManager``
+or ``ConfigListManager``, because these class methods automatically
+convert nested dictionaries and lists to manager classes. It doesn't affect the
+functionality much if you use the main constructor, but it may cost you a few
+milliseconds of processing time down the road, as more conversions must be
 performed on the fly.
 
+Writing to a Configuration File
+-------------------------------
+
+You can dump the configuration in various formats: YAML, JSON, and TOML.
+Simply use the corresponding ``to_*()`` method (e.g. ``to_yaml()``, ``to_json()``)
+and supply a path. Note that ``ConfigListManager`` objects can only be dumped to 
+YAML and JSON.
 
 Converting and Deconverting
 ---------------------------
-If you want to, you can convert the entire hierarchy to nested managers using the 
-``convert()`` method. This is done automatically when using the ``from_*()`` constructors, 
+If you want to, you can convert the entire hierarchy to nested managers using the
+``convert()`` method. This is done automatically when using the ``from_*()`` constructors,
 but if you've used the main constructor or added some keys and values (an odd thing to do),
 you might want to obtain a converted copy of the hierarchy. Again, this has a barely noticeable
-effect on the functionality. Alternatively, you can deconvert the hierarchy to nested dicts and 
-lists using the ``deconvert()`` method. This is useful if you want the configuration data 
+effect on the functionality. Alternatively, you can deconvert the hierarchy to nested dicts and
+lists using the ``deconvert()`` method. This is useful if you want the configuration data
 in vanilla Python data structures for serialization.
 
 .. code-block:: python
@@ -184,9 +191,9 @@ configuration data, the default value will be used instead.
 
     default_config = {
         "database": {
-            "host": "impala.megacorp.com",
-            "database.port": 21050,
-            "database.auth_method": "LDAP",
+            "host": "impala.megacorp.com", # Will be overridden
+            "database.port": 21050, # Will be overridden
+            "database.auth_method": "LDAP", # Not present in the config data
         }
     }
     config_data = {"database": {"host": "localhost", "port": 5432}}
@@ -222,19 +229,33 @@ required keys. This is especially useful because it works for nested keys using 
 
     config = ConfigManager.from_dict(config_data) # Create a manager
 
-    missing_keys = config.check_required_keys(required_keys, if_missing="return")
-    print(missing_keys) # Output: ["database.auth_method"]
+    config.check_required_keys(required_keys, if_missing="raise")
+    # Output: KeyError: Configuration is missing required keys: ['database.auth_method']
+
+Raise a warning instead of an exception by passing ``if_missing="warn"``:
+
+.. code-block:: python
 
     missing_keys = config.check_required_keys(required_keys, if_missing="warn")
     # Output: UserWarning: Configuration is missing required keys: ['database.auth_method']
     print(missing_keys) # Output: ["database.auth_method"]
 
-    config.check_required_keys(required_keys, if_missing="raise")
+Or, quietly get a list of missing keys by passing ``if_missing="return"``:
+
+.. code-block:: python
+
+    missing_keys = config.check_required_keys(required_keys, if_missing="return")
+    print(missing_keys) # Output: ["database.auth_method"]
+
+You can also check for required keys by passing ``required_keys`` to any of the
+``ConfigManager`` constructors.
+
+.. code-block:: python
+
+    config = ConfigManager.from_dict(config_data, required_keys=required_keys)
     # Output: KeyError: Configuration is missing required keys: ['database.auth_method']
 
-You can also check for required keys by passing ``required_keys`` to any of the 
-``ConfigManager`` constructors.
-    
+
 Contributing
 ============
 

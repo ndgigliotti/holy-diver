@@ -4,10 +4,12 @@
 
 import json
 import os
+import string
 import warnings
 from tempfile import TemporaryDirectory
 
 import pytest
+import toml
 import yaml
 
 from dot_config import ConfigListManager, ConfigManager
@@ -23,6 +25,8 @@ TEST_DICT = {
     "i": {"h": 7, "j": -3, "m": {"o": -5, "p": -2, "q": [1, {"r": 6, "s": 7}]}},
     "c": 4,
 }
+TEST_FLAT_DICT = {k: ord(k) for k in string.ascii_lowercase}
+TEST_SECTIONS = {"section_1": {"a": 1, "b": 2}, "section_2": {"c": 3, "d": 4}}
 TEST_LIST = [1, 2, {"a": 3}, [4, {"b": 5}]]
 TEST_BAD_KEYS = ["c.d.e", "~3.#$@", "8a", "deep_keys", "convert", "deconvert"]
 TEST_DEEP_KEYS = {
@@ -372,3 +376,76 @@ def test_from_json():
         )
     # Check the recursive conversion and loaded values
     check_conversion_and_values(cm)
+
+
+def test_from_toml():
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
+        # Prepare a temporary TOML file
+        fname = os.path.join(d, "config.toml")
+        with open(fname, "w") as f:
+            toml.dump(TEST_SECTIONS, f)
+
+        # Load the TOML file and trigger error
+        with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
+            ConfigManager.from_toml(
+                fname,
+                required_keys=["section_3"],
+                if_missing="raise",
+            )
+        # Load the TOML file and trigger warning
+        with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
+            ConfigManager.from_toml(
+                fname,
+                required_keys=["section_3"],
+                if_missing="warn",
+            )
+        # Load the TOML file for real
+        cm = ConfigManager.from_toml(fname)
+
+    # Check the recursive conversion and loaded values
+    assert isinstance(cm.section_1, ConfigManager)
+    assert isinstance(cm.section_2, ConfigManager)
+    assert len(cm) == len(TEST_SECTIONS)
+    assert cm.section_1.a == 1
+    assert cm.section_1.b == 2
+    assert cm.section_2.c == 3
+    assert cm.section_2.d == 4
+
+
+def test_to_yaml():
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
+        # Prepare a temporary YAML file
+        fname = os.path.join(d, "config.yaml")
+        cm = ConfigManager.from_dict(TEST_DICT)
+        cm.to_yaml(fname)
+        assert os.path.isfile(fname)
+        with open(fname) as f:
+            loaded_dict = yaml.safe_load(f)
+        assert loaded_dict == cm
+        assert loaded_dict == TEST_DICT
+
+
+def test_to_json():
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
+        # Prepare a temporary JSON file
+        fname = os.path.join(d, "config.json")
+        cm = ConfigManager.from_dict(TEST_DICT)
+        cm.to_json(fname)
+        assert os.path.isfile(fname)
+        with open(fname) as f:
+            loaded_dict = json.load(f)
+        assert loaded_dict == cm
+        assert loaded_dict == TEST_DICT
+
+
+def test_to_toml():
+    with TemporaryDirectory(prefix="test_dot_config_") as d:
+        # Prepare a temporary TOML file
+        fname = os.path.join(d, "config.toml")
+        cm = ConfigManager.from_dict(TEST_SECTIONS)
+        cm.to_toml(fname)
+        assert os.path.isfile(fname)
+        with open(fname) as f:
+            loaded_dict = toml.load(f)
+        assert loaded_dict == cm
+        assert loaded_dict == TEST_SECTIONS

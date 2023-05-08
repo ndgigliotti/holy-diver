@@ -6,6 +6,7 @@ import warnings
 from collections import UserDict
 from typing import Any, Iterable, List, Optional
 
+import toml
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -272,7 +273,10 @@ class ConfigManager(UserDict):
 
         """
         return cls(
-            dict, defaults=defaults, required_keys=required_keys, if_missing=if_missing
+            dict,
+            defaults=defaults,
+            required_keys=required_keys,
+            if_missing=if_missing,
         ).convert()
 
     @classmethod
@@ -315,7 +319,7 @@ class ConfigManager(UserDict):
 
         """
         load = yaml.safe_load if safe else yaml.full_load
-        with open(path, "r") as f:
+        with open(path) as f:
             data = load(f)
         if isinstance(data, list):
             raise TypeError(
@@ -323,7 +327,10 @@ class ConfigManager(UserDict):
                 "Use `ConfigListManager.from_yaml` instead."
             )
         return cls(
-            data, defaults=defaults, required_keys=required_keys, if_missing=if_missing
+            data,
+            defaults=defaults,
+            required_keys=required_keys,
+            if_missing=if_missing,
         ).convert()
 
     @classmethod
@@ -362,7 +369,7 @@ class ConfigManager(UserDict):
             If the JSON file encodes a list.
 
         """
-        with open(path, "r") as f:
+        with open(path) as f:
             data = json.load(f)
         if isinstance(data, list):
             raise TypeError(
@@ -370,5 +377,83 @@ class ConfigManager(UserDict):
                 "Use `ConfigListManager.from_json` instead."
             )
         return cls(
-            data, defaults=defaults, required_keys=required_keys, if_missing=if_missing
+            data,
+            defaults=defaults,
+            required_keys=required_keys,
+            if_missing=if_missing,
         ).convert()
+
+    @classmethod
+    def from_toml(
+        cls,
+        path: str,
+        defaults: dict = None,
+        required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
+    ) -> "ConfigManager":
+        """Create nested managers from a TOML file.
+
+        Parameters
+        ----------
+        path : str
+            Path to TOML file.
+        defaults : dict, optional
+            Default values to add to the configuration, by default None.
+        required_keys : Iterable[str], optional
+            Keys that must be present in the configuration, by default None.
+        if_missing : str, optional
+            Action to take if any keys are missing, by default "raise". Options are:
+                * "raise": raise a KeyError
+                * "warn": raise a warning
+
+        Returns
+        -------
+        ConfigManager
+            Nested managers created from the TOML file.
+
+        """
+        with open(path) as f:
+            data = toml.load(f)
+
+        return cls(
+            data,
+            defaults=defaults,
+            required_keys=required_keys,
+            if_missing=if_missing,
+        ).convert()
+
+    def to_yaml(self, path: str) -> None:
+        """Write the configuration to a YAML file.
+
+        Parameters
+        ----------
+        path : str
+            Path to YAML file.
+
+        """
+        with open(path, "w") as f:
+            yaml.dump(self.deconvert(), f)
+
+    def to_json(self, path: str) -> None:
+        """Write the configuration to a JSON file.
+
+        Parameters
+        ----------
+        path : str
+            Path to JSON file.
+
+        """
+        with open(path, "w") as f:
+            json.dump(self.deconvert(), f)
+
+    def to_toml(self, path: str) -> None:
+        """Write the configuration to a TOML file.
+
+        Parameters
+        ----------
+        path : str
+            Path to TOML file.
+
+        """
+        with open(path, "w") as f:
+            toml.dump(self.deconvert(), f)

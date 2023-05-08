@@ -127,6 +127,23 @@ class ConfigListManager(UserList):
         """Return the depth of the configuration tree."""
         return max([k.count(".") for k in self.deep_keys()])
 
+    def to_string(self) -> str:
+        """Convert the ConfigListManager to a string.
+
+        Returns
+        -------
+        str
+            String representation of the ConfigListManager.
+
+        """
+        return yaml.dump(self.deconvert())
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({repr(self.data)})"
+
+    def __str__(self) -> str:
+        return self.to_string()
+
     @classmethod
     def from_list(cls, list: List[Any]) -> "ConfigListManager":
         """Create a ConfigListManager from a list.
@@ -167,7 +184,7 @@ class ConfigListManager(UserList):
 
         """
         load = yaml.safe_load if safe else yaml.full_load
-        with open(path, "r") as f:
+        with open(path) as f:
             cfg = load(f)
         if isinstance(cfg, dict):
             raise TypeError(
@@ -175,23 +192,6 @@ class ConfigListManager(UserList):
                 "Use `ConfigManager.from_yaml` instead."
             )
         return cls(cfg).convert()
-
-    def to_string(self) -> str:
-        """Convert the ConfigListManager to a string.
-
-        Returns
-        -------
-        str
-            String representation of the ConfigListManager.
-
-        """
-        return yaml.dump(self.deconvert())
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({repr(self.data)})"
-
-    def __str__(self) -> str:
-        return self.to_string()
 
     @classmethod
     def from_json(cls, path: str) -> "ConfigListManager":
@@ -213,7 +213,7 @@ class ConfigListManager(UserList):
             If the JSON file encodes a dict.
 
         """
-        with open(path, "r") as f:
+        with open(path) as f:
             cfg = json.load(f)
         if isinstance(cfg, dict):
             raise TypeError(
@@ -221,3 +221,27 @@ class ConfigListManager(UserList):
                 "Use `ConfigManager.from_json` instead."
             )
         return cls(cfg).convert()
+
+    def to_yaml(self, path: str) -> None:
+        """Write the configuration to a YAML file.
+
+        Parameters
+        ----------
+        path : str
+            Path to YAML file.
+
+        """
+        with open(path, "w") as f:
+            yaml.dump(self.deconvert(), f)
+
+    def to_json(self, path: str) -> None:
+        """Write the configuration to a JSON file.
+
+        Parameters
+        ----------
+        path : str
+            Path to JSON file.
+
+        """
+        with open(path, "w") as f:
+            json.dump(self.deconvert(), f)
