@@ -143,8 +143,8 @@ If you want to, you can convert the entire hierarchy to nested managers using th
 but if you've used the main constructor or added some keys and values (an odd thing to do),
 you might want to obtain a converted copy of the hierarchy. Again, this has a barely noticeable
 effect on the functionality. Alternatively, you can deconvert the hierarchy to nested dicts and 
-lists using the ``deconvert()`` method. This is useful if you want to the configuration data 
-in a vanilla Python data structures for serialization.
+lists using the ``deconvert()`` method. This is useful if you want the configuration data 
+in vanilla Python data structures for serialization.
 
 .. code-block:: python
 
