@@ -21,7 +21,7 @@ dot-config
 recursively dot-accessible configuration manager for deeply nested configuration files.
 It also has some other convenient features, such handling default settings, 
 checking for the presence of required (possibly nested) keys, and initializing directly 
-from YAML and JSON files. and It employs two main classes: ``ConfigManager`` and 
+from YAML and JSON files. It employs two main classes: ``ConfigManager`` and 
 ``ConfigListManager``. ``ConfigManager`` is a dictionary-like class that allows you to 
 access nested keys using dot notation (i.e. recursively accessing keys as if they were 
 attributes). ``ConfigListManager`` is a list-like class that allows you to access 
