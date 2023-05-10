@@ -1,10 +1,11 @@
 """Module for ConfigManager class and related functions."""
 import json
 import logging
+import os
 import re
 import warnings
 from collections import UserDict
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Union
 
 import toml
 import yaml
@@ -422,38 +423,72 @@ class ConfigManager(UserDict):
             if_missing=if_missing,
         ).convert()
 
-    def to_yaml(self, path: str) -> None:
+    def to_yaml(self, path: Optional[str] = None) -> Union[str, bool]:
         """Write the configuration to a YAML file.
 
+        If `path` is None, return the YAML string. Otherwise, write
+        to the file at `path` and return True if successful.
+
         Parameters
         ----------
-        path : str
+        path : str, optional
             Path to YAML file.
 
+        Returns
+        -------
+        str or bool
+            YAML string or True if successful.
         """
+        if path is None:
+            return yaml.dump(self.deconvert())
+
         with open(path, "w") as f:
             yaml.dump(self.deconvert(), f)
+        return os.path.isfile(path)
 
-    def to_json(self, path: str) -> None:
+    def to_json(self, path: Optional[str] = None) -> Union[str, bool]:
         """Write the configuration to a JSON file.
+
+        If `path` is None, return the JSON string. Otherwise, write
+        to the file at `path` and return True if successful.
 
         Parameters
         ----------
-        path : str
+        path : str, optional
             Path to JSON file.
 
+        Returns
+        -------
+        str or bool
+            JSON string or True if successful.
+
         """
+        if path is None:
+            return json.dumps(self.deconvert())
+
         with open(path, "w") as f:
             json.dump(self.deconvert(), f)
+        return os.path.isfile(path)
 
-    def to_toml(self, path: str) -> None:
+    def to_toml(self, path: Optional[str]=None) -> Union[str, bool]:
         """Write the configuration to a TOML file.
+
+        If `path` is None, return the TOML string. Otherwise, write
+        to the file at `path` and return True if successful.
 
         Parameters
         ----------
         path : str
             Path to TOML file.
 
+        Returns
+        -------
+        str or bool
+            TOML string or True if successful.
         """
+        if path is None:
+            return toml.dumps(self.deconvert())
+
         with open(path, "w") as f:
             toml.dump(self.deconvert(), f)
+        return os.path.isfile(path)

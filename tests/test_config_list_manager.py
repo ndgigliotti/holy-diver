@@ -190,6 +190,15 @@ def test_to_yaml():
         assert loaded == TEST_LIST
 
 
+def test_to_yaml_string():
+    clm = ConfigListManager(TEST_LIST)
+    serialized = clm.to_yaml()
+    assert isinstance(serialized, str)
+    loaded = yaml.safe_load(serialized)
+    assert loaded == clm
+    assert loaded == TEST_LIST
+
+
 def test_to_json():
     with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary JSON file
@@ -201,3 +210,12 @@ def test_to_json():
             loaded = json.load(f)
         assert loaded == clm
         assert loaded == TEST_LIST
+
+
+def test_to_json_string():
+    clm = ConfigListManager(TEST_LIST)
+    serialized = clm.to_json()
+    assert isinstance(serialized, str)
+    loaded = json.loads(serialized)
+    assert loaded == clm
+    assert loaded == TEST_LIST

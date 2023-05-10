@@ -425,6 +425,14 @@ def test_to_yaml():
         assert loaded_dict == TEST_DICT
 
 
+def test_to_yaml_string():
+    cm = ConfigManager.from_dict(TEST_DICT)
+    serialized = cm.to_yaml()
+    loaded_dict = yaml.safe_load(serialized)
+    assert loaded_dict == cm
+    assert loaded_dict == TEST_DICT
+
+
 def test_to_json():
     with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary JSON file
@@ -438,6 +446,14 @@ def test_to_json():
         assert loaded_dict == TEST_DICT
 
 
+def test_to_json_string():
+    cm = ConfigManager.from_dict(TEST_DICT)
+    serialized = cm.to_json()
+    loaded_dict = json.loads(serialized)
+    assert loaded_dict == cm
+    assert loaded_dict == TEST_DICT
+
+
 def test_to_toml():
     with TemporaryDirectory(prefix="test_dot_config_") as d:
         # Prepare a temporary TOML file
@@ -449,3 +465,11 @@ def test_to_toml():
             loaded_dict = toml.load(f)
         assert loaded_dict == cm
         assert loaded_dict == TEST_SECTIONS
+
+
+def test_to_toml_string():
+    cm = ConfigManager.from_dict(TEST_SECTIONS)
+    serialized = cm.to_toml()
+    loaded_dict = toml.loads(serialized)
+    assert loaded_dict == cm
+    assert loaded_dict == TEST_SECTIONS
