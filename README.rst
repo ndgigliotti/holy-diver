@@ -140,7 +140,7 @@ Writing to a Configuration File
 
 You can dump the configuration in various formats: YAML, JSON, and TOML.
 Simply use the corresponding ``to_*()`` method (e.g. ``to_yaml()``, ``to_json()``)
-and supply a path. Note that ``ConfigListManager`` objects can only be dumped to 
+and supply a path. Note that ``ConfigListManager`` objects can only be dumped to
 YAML and JSON.
 
 Converting and Deconverting

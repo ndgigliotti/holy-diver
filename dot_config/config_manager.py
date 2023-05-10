@@ -470,7 +470,7 @@ class ConfigManager(UserDict):
             json.dump(self.deconvert(), f)
         return os.path.isfile(path)
 
-    def to_toml(self, path: Optional[str]=None) -> Union[str, bool]:
+    def to_toml(self, path: Optional[str] = None) -> Union[str, bool]:
         """Write the configuration to a TOML file.
 
         If `path` is None, return the TOML string. Otherwise, write
