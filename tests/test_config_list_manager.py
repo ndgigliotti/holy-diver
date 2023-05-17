@@ -42,10 +42,23 @@ def test_getitem():
     assert clm[3][1]["b"] == 5
 
 
+def test_getitem_str():
+    clm = ConfigListManager(TEST_LIST)
+    # Without underscore
+    assert clm["0"] == 1
+    assert clm["1"] == 2
+    assert clm["2"]["a"] == 3
+    assert clm["3"] == [4, {"b": 5}]
+    # With underscore
+    assert clm["_0"] == 1
+    assert clm["_1"] == 2
+    assert clm["_2"]["a"] == 3
+    assert clm["_3"] == [4, {"b": 5}]
+
+
 def test_setitem():
     clm = ConfigListManager(TEST_LIST)
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        clm[1] = 6
+    clm[1] = 6
     assert clm[1] == 6
 
 
@@ -60,8 +73,7 @@ def test_getattr():
 
 def test_setattr():
     clm = ConfigListManager(TEST_LIST)
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        clm._0 = 6
+    clm._0 = 6
     assert clm[0] == 6
 
 
@@ -113,6 +125,28 @@ def test_deep_keys():
     converted = clm.convert()
     deep_keys = converted.deep_keys()
     assert set(deep_keys) == TEST_DEEP_KEYS
+
+
+def test_get_deep_key():
+    clm = ConfigListManager(TEST_LIST)
+    # Without underscore
+    assert clm.get_deep_key("0") == 1
+    assert clm.get_deep_key("1") == 2
+    assert clm.get_deep_key("2.a") == 3
+    assert clm.get_deep_key("3.0") == 4
+    assert clm.get_deep_key("3.1.b") == 5
+    # With underscore
+    assert clm.get_deep_key("_0") == 1
+    assert clm.get_deep_key("_1") == 2
+    assert clm.get_deep_key("_2.a") == 3
+    assert clm.get_deep_key("_3._0") == 4
+    assert clm.get_deep_key("_3._1.b") == 5
+
+
+def test_deep_keys_evaluable():
+    clm = ConfigListManager(TEST_LIST).convert()
+    for key in clm.deep_keys():
+        assert eval(f"clm.{key}") == clm.get_deep_key(key)
 
 
 def test_depth():

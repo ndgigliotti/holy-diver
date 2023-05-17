@@ -1,39 +1,57 @@
 import json
 import os
+import pprint
 import re
 import warnings
 from collections import UserList
 from typing import Any, List, Optional, Union
 
 import yaml
+from dot_config.constants import DEEP_KEY_LAX
 
 
 class ConfigListManager(UserList):
-    _attr_index_pattern = re.compile(r"^_[0-9]+$")
+    _attr_idx_pat = re.compile(r"^_?([0-9]+)$")
+
+    def check_str_idx(self, idx):
+        return isinstance(idx, str) and self._attr_idx_pat.fullmatch(idx) is not None
+
+    def as_int(self, idx):
+        return int(self._attr_idx_pat.fullmatch(idx).group(1))
 
     def __getitem__(self, i):
         if isinstance(i, slice):
             return type(self)(self.data[i]).convert()
+        elif self.check_str_idx(i):
+            return self.data[self.as_int(i)]
         else:
             return self.convert().data[i]
 
     def __setitem__(self, i, item):
+        if self.check_str_idx(i):
+            i = self.as_int(i)
         self.data[i] = item
-        warnings.warn(f"Configuration item {i} set to {item} after initialization!")
+        # warnings.warn(f"Configuration item {i} set to {item} after initialization!")
 
     def __getattr__(self, name: str) -> Any:
         """Get an item."""
-        return self[int(name[1:])]
+        return self[self.as_int(name)]
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute or item."""
-        if self._attr_index_pattern.fullmatch(name):
-            self[int(name[1:])] = value
+        if self.check_str_idx(name):
+            self[self.as_int(name)] = value
         else:
             super().__setattr__(name, value)
 
     def keys(self):
         return [f"_{i}" for i in range(len(self.data))]
+
+    def get(self, key, default=None):
+        if key in self.keys():
+            return self[key]
+        else:
+            return default
 
     def convert_item(self, item: Any) -> Any:
         """Recursively convert nested dicts and lists to nested managers.
@@ -123,6 +141,18 @@ class ConfigListManager(UserList):
                     keys.append(f"_{i}.{k}")
         return keys
 
+    def get_deep_key(self, key: str) -> Any:
+        if DEEP_KEY_LAX.fullmatch(key) is None:
+            raise ValueError(f"Key '{key}' is not a valid deep key.")
+        keys = key.split(".")
+        value = self.convert()
+        for k in keys:
+            try:
+                value = value[k]
+            except KeyError:
+                raise KeyError(f"Key '{key}' not found.")
+        return value
+
     @property
     def depth(self) -> int:
         """Return the depth of the configuration tree."""
@@ -137,7 +167,7 @@ class ConfigListManager(UserList):
             String representation of the ConfigListManager.
 
         """
-        return yaml.dump(self.deconvert())
+        return pprint.pformat(self.deconvert())
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self.data)})"

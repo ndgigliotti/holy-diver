@@ -4,11 +4,13 @@ import logging
 import os
 import re
 import warnings
+import pprint
 from collections import UserDict
 from typing import Any, Iterable, List, Optional, Union
 
 import toml
 import yaml
+from dot_config.constants import DEEP_KEY_STRICT, DEEP_KEY_LAX, DUNDER, PRIVATE
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +22,6 @@ PROTECTED_KEYS = frozenset(
         "convert",
         "deconvert",
         "to_string",
-        "__next__",
-        "__getstate__",
-        "__setstate__",
     ]
     + dir(UserDict())
 )
@@ -33,7 +32,6 @@ def check_keys(
 ) -> None:
     """Check that keys are syntactically valid and not reserved."""
     alphanum = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
-    dunder = re.compile(r"^__.*__$")
     reserved = set() if reserved is None else set(reserved)
     for key in keys:
         if alphanum.fullmatch(key) is None:
@@ -41,45 +39,90 @@ def check_keys(
                 f"Key '{key}' is not a valid alphanumeric "
                 f"attribute name matching r'{alphanum.pattern}'."
             )
-        if dunder.fullmatch(key) is not None:
+        if DUNDER.fullmatch(key) is not None:
             raise ValueError(
                 f"Key '{key}' is an invalid attribute name "
-                f"matching the dunder pattern r'{dunder.pattern}'."
+                f"matching the dunder pattern r'{DUNDER.pattern}'."
+            )
+        if PRIVATE.fullmatch(key) is not None:
+            raise ValueError(
+                f"Key '{key}' is an invalid attribute name "
+                f"matching the private pattern r'{PRIVATE.pattern}'."
             )
         if key in reserved:
             raise ValueError(f"Key '{key}' is a reserved attribute or method name.")
 
 
 def is_protected(key: str):
-    return key in PROTECTED_KEYS or re.fullmatch(r"__\w+__", key) is not None
+    """Check if a key is protected."""
+    is_dunder = DUNDER.fullmatch(key) is not None
+    is_private = PRIVATE.fullmatch(key) is not None
+    is_reserved = key in PROTECTED_KEYS
+    return any([is_dunder, is_private, is_reserved])
+
+
+def deep_merge(d1: dict, d2: dict, in_place: bool = False) -> Union[dict, None]:
+    """Merge two nested dictionaries.
+
+    Values from `d2` take priority over values from `d1`.
+
+    Parameters
+    ----------
+    d1 : dict
+        First dictionary.
+    d2 : dict
+        Second dictionary.
+    in_place : bool, optional
+        Whether to merge in place, by default False.
+
+    Returns
+    -------
+    dict
+        Merged dictionary.
+    """
+    merged = d1 if in_place else d1.copy()
+    for k, v in d2.items():
+        if isinstance(v, dict):
+            merged[k] = deep_merge(merged.get(k, {}), v)
+        else:
+            merged[k] = v
+    return None if in_place else merged
 
 
 class ConfigManager(UserDict):
     def __init__(
         self,
-        dict: dict = None,
+        data: dict = None,
         defaults: dict = None,
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
     ) -> None:
         self.data = {}
-        if defaults is not None:
+        if defaults is not None and data is not None:
             check_keys(defaults.keys())
+            check_keys(data.keys())
             self.data.update(defaults)
-        if dict is not None:
-            check_keys(dict.keys())
-            self.data.update(dict)
+            deep_merge(self.data, data, in_place=True)
+        else:
+            if defaults is not None:
+                check_keys(defaults.keys())
+                self.data = defaults
+            if data is not None:
+                check_keys(data.keys())
+                self.data = data
         if required_keys is not None:
             self.check_required_keys(required_keys, if_missing=if_missing)
 
     def __getitem__(self, key: str) -> Any:
         """Get an item."""
+        if DEEP_KEY_STRICT.fullmatch(key) is not None:
+            return self.get_deep_key(key)
         return self.convert().data[key]
 
     def __setitem__(self, key: str, item: Any) -> None:
         """Set an item."""
-        self.data[key] = item
-        warnings.warn(f"Configuration key '{key}' set to {item} after initialization!")
+        self.data[key] = self.convert_item(item)
+        # warnings.warn(f"Configuration key '{key}' set to {item} after initialization!")
 
     def __getattr__(self, name: str) -> Any:
         """Get an item."""
@@ -103,10 +146,51 @@ class ConfigManager(UserDict):
                 keys.extend([f"{k}.{i}" for i in v.deep_keys()])
         return keys
 
+    def get_deep_key(self, key: str) -> Any:
+        """Get a value using dot notation."""
+        if DEEP_KEY_LAX.fullmatch(key) is None:
+            raise ValueError(f"Key '{key}' is not a valid deep key.")
+        keys = key.split(".")
+        value = self.convert()
+        for k in keys:
+            try:
+                value = value[k]
+            except KeyError:
+                raise KeyError(f"Key '{key}' not found.")
+        return value
+
+    def set_deep_key(self, key: str, value: Any) -> None:
+        """Set a value using dot notation."""
+        raise NotImplementedError("This method is not yet implemented.")
+        if DEEP_KEY_LAX.fullmatch(key) is None:
+            raise ValueError(f"Key '{key}' is not a valid deep key.")
+        keys = key.split(".")
+        item = self
+        for k in keys[:-1]:
+            item = item.get(k, {})
+        item[keys[-1]] = value
+
     @property
     def depth(self) -> int:
         """Return the depth of the configuration tree."""
         return max([k.count(".") for k in self.deep_keys()])
+
+    def update(self, other: dict, deep: bool = False) -> None:
+        """Update the configuration with a dictionary.
+
+        Parameters
+        ----------
+        other : dict
+            Dictionary to update with.
+        deep : bool, optional
+            Whether to update nested ConfigManagers, by default False.
+
+        """
+        if deep:
+            self.data = deep_merge(self.deconvert(), self.deconvert_item(other))
+            self.data = self.convert().data
+        else:
+            self.data.update(self.convert_item(other))
 
     def check_required_keys(
         self, keys: Iterable[str], if_missing: str = "raise"
@@ -231,7 +315,7 @@ class ConfigManager(UserDict):
             String representation of the ConfigManager.
 
         """
-        return yaml.dump(self.deconvert())
+        return pprint.pformat(self.deconvert())
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self.data)})"

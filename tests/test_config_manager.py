@@ -24,6 +24,7 @@ TEST_DICT = {
     "b": 3,
     "i": {"h": 7, "j": -3, "m": {"o": -5, "p": -2, "q": [1, {"r": 6, "s": 7}]}},
     "c": 4,
+    "d": {"f": {"w": 4}},
 }
 TEST_FLAT_DICT = {k: ord(k) for k in string.ascii_lowercase}
 TEST_SECTIONS = {"section_1": {"a": 1, "b": 2}, "section_2": {"c": 3, "d": 4}}
@@ -36,6 +37,7 @@ TEST_DEEP_KEYS = {
     "d.e",
     "d.f",
     "d.f.g",
+    "d.f.w",
     "d.h",
     "d.h._0",
     "d.h._1",
@@ -89,7 +91,7 @@ def test_init_with_defaults():
 
 
 def test_init_with_dict():
-    cm = ConfigManager(dict=TEST_DICT)
+    cm = ConfigManager(data=TEST_DICT)
     assert cm["b"] == 3
     assert cm["i"]["h"] == 7
     assert cm["i"]["j"] == -3
@@ -103,18 +105,18 @@ def test_init_with_dict():
 
 def test_null_values():
     dict = {"a": None, "b": 3, "c": {"d": None, "e": 5}}
-    cm = ConfigManager(dict=dict)
+    cm = ConfigManager(data=dict)
     assert cm["a"] is None
 
 
 def test_init_with_bad_keys():
     for k in TEST_BAD_KEYS:
         with pytest.raises(ValueError, match=BAD_KEY_MSG):
-            ConfigManager(dict={k: 0})
+            ConfigManager(data={k: 0})
 
 
 def test_init_with_defaults_and_dict():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm["a"] == 1
     assert cm["b"] == 3
     assert cm["d"]["e"] == 3
@@ -134,10 +136,10 @@ def test_init_with_defaults_and_dict():
 
 
 def test_getitem():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm["a"] == 1
     assert cm["b"] == 3
-    assert cm["d"] == {"e": 3, "f": {"g": 6}, "h": [8, 2, {"i": 5, "j": 9}]}
+    assert cm["d"] == {"e": 3, "f": {"g": 6, "w": 4}, "h": [8, 2, {"i": 5, "j": 9}]}
     assert cm["i"] == {
         "h": 7,
         "j": -3,
@@ -147,17 +149,17 @@ def test_getitem():
 
 
 def test_setitem():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        cm["a"] = 5
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
+    cm["a"] = 5
     assert cm["a"] == 5
 
 
 def test_getattr():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm.a == 1
     assert cm.b == 3
-    assert cm.d == {"e": 3, "f": {"g": 6}, "h": [8, 2, {"i": 5, "j": 9}]}
+    assert cm.d == {"e": 3, "f": {"g": 6, "w": 4}, "h": [8, 2, {"i": 5, "j": 9}]}
     assert cm.i == {
         "h": 7,
         "j": -3,
@@ -167,14 +169,14 @@ def test_getattr():
 
 
 def test_setattr():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        cm.a = 5
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
+    cm.a = 5
     assert cm["a"] == 5
 
 
 def test_convert():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     assert isinstance(cm["d"], ConfigManager)
     assert isinstance(cm["d"]["f"], ConfigManager)
     assert isinstance(cm["d"]["h"][2], ConfigManager)
@@ -214,42 +216,66 @@ def check_conversion_and_values(cm):
 
 
 def test_getattr_nested():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     check_conversion_and_values(cm)
 
 
 def test_setattr_nested():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        cm.d.f.g = -5
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
+    cm.d.f.g = -5
     assert cm.d.f.g == -5
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        cm.d.h[2].i = 3
+    # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
+    cm.d.h[2].i = 3
     assert cm.d.h[2].i == 3
-    with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
-        cm.i.m.q[1].r *= 2
+    # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
+    cm.i.m.q[1].r *= 2
     assert cm.i.m.q[1].r == 12
 
 
 def test_deep_keys():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     assert set(cm.deep_keys()) == TEST_DEEP_KEYS
 
 
+def test_get_deep_key():
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    assert cm.get_deep_key("d.f.g") == 6
+    assert cm.get_deep_key("d.h._0") == 8
+    assert cm.get_deep_key("d.h._1") == 2
+    assert cm.get_deep_key("d.h._2.i") == 5
+    assert cm.get_deep_key("i.m.q._1.r") == 6
+    assert cm.get_deep_key("i.m.q._1.s") == 7
+    assert isinstance(cm.get_deep_key("d"), ConfigManager)
+    assert isinstance(cm.get_deep_key("d.f"), ConfigManager)
+    assert isinstance(cm.get_deep_key("d.h._2"), ConfigManager)
+    assert isinstance(cm.get_deep_key("i"), ConfigManager)
+    assert isinstance(cm.get_deep_key("i.m"), ConfigManager)
+    assert isinstance(cm.get_deep_key("i.m.q._1"), ConfigManager)
+    assert isinstance(cm.get_deep_key("i.m.q"), ConfigListManager)
+    assert isinstance(cm.get_deep_key("d.h"), ConfigListManager)
+
+
+def test_deep_keys_evaluable():
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    for key in cm.deep_keys():
+        assert eval(f"cm.{key}") == cm.get_deep_key(key)
+
+
 def test_depth():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     assert cm.depth == 4
 
 
 def test_check_required_keys_raise():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
         cm.check_required_keys(TEST_REQUIRED_KEYS_FAIL, if_missing="raise")
     cm.check_required_keys(TEST_REQUIRED_KEYS_PASS, if_missing="raise")
 
 
 def test_check_required_keys_warn():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
         missing_keys = cm.check_required_keys(
             TEST_REQUIRED_KEYS_FAIL, if_missing="warn"
@@ -262,7 +288,7 @@ def test_check_required_keys_warn():
 
 
 def test_check_required_keys_return():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         missing_keys = cm.check_required_keys(
@@ -274,7 +300,7 @@ def test_check_required_keys_return():
 
 
 def test_deconvert():
-    cm = ConfigManager(dict=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     dct = cm.deconvert()
     assert isinstance(dct, dict)
     assert isinstance(dct["d"], dict)
@@ -285,6 +311,27 @@ def test_deconvert():
     assert isinstance(dct["i"]["m"]["q"][1], dict)
     assert isinstance(dct["i"]["m"]["q"], list)
     assert isinstance(dct["d"]["h"], list)
+
+
+def test_shallow_update():
+    cm = ConfigManager(TEST_DICT).convert()
+    test_dict_update = {"b": 1, "i": 2, "c": 3}
+    cm.update(test_dict_update, deep=False)
+    assert cm["b"] == 1
+    assert cm["i"] == 2
+    assert cm["c"] == 3
+
+
+def test_deep_update():
+    cm = ConfigManager({"a": {"b": {"c": 5}, "h": {"x": 2}}}).convert()
+    cm.update({"w": 7, "a": {"b": {"d": 10}, "h": {"x": -1}}}, deep=True)
+    assert cm["w"] == 7
+    assert cm["a"]["b"]["c"] == 5
+    assert cm["a"]["b"]["d"] == 10
+    assert cm["a"]["h"]["x"] == -1
+    assert isinstance(cm["a"]["b"], ConfigManager)
+    assert isinstance(cm["a"]["b"], ConfigManager)
+    assert isinstance(cm["a"]["h"], ConfigManager)
 
 
 def test_from_dict():
