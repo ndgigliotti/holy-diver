@@ -127,26 +127,46 @@ def test_deep_keys():
     assert set(deep_keys) == TEST_DEEP_KEYS
 
 
-def test_get_deep_key():
+def test_deep_get():
     clm = ConfigListManager(TEST_LIST)
     # Without underscore
-    assert clm.get_deep_key("0") == 1
-    assert clm.get_deep_key("1") == 2
-    assert clm.get_deep_key("2.a") == 3
-    assert clm.get_deep_key("3.0") == 4
-    assert clm.get_deep_key("3.1.b") == 5
+    assert clm.deep_get("0") == 1
+    assert clm.deep_get("1") == 2
+    assert clm.deep_get("2.a") == 3
+    assert clm.deep_get("3.0") == 4
+    assert clm.deep_get("3.1.b") == 5
+    assert isinstance(clm.deep_get("2"), ConfigManager)
+    assert isinstance(clm.deep_get("3"), ConfigListManager)
+    assert isinstance(clm.deep_get("3.1"), ConfigManager)
     # With underscore
-    assert clm.get_deep_key("_0") == 1
-    assert clm.get_deep_key("_1") == 2
-    assert clm.get_deep_key("_2.a") == 3
-    assert clm.get_deep_key("_3._0") == 4
-    assert clm.get_deep_key("_3._1.b") == 5
+    assert clm.deep_get("_0") == 1
+    assert clm.deep_get("_1") == 2
+    assert clm.deep_get("_2.a") == 3
+    assert clm.deep_get("_3._0") == 4
+    assert clm.deep_get("_3._1.b") == 5
+    assert isinstance(clm.deep_get("_2"), ConfigManager)
+    assert isinstance(clm.deep_get("_3"), ConfigListManager)
+    assert isinstance(clm.deep_get("_3._1"), ConfigManager)
+
+
+def test_deep_lookup():
+    clm = ConfigListManager(TEST_LIST)
+    # Without underscore
+    assert clm["2.a"] == 3
+    assert clm["3.0"] == 4
+    assert clm["3.1.b"] == 5
+    assert isinstance(clm["3.1"], ConfigManager)
+    # With underscore
+    assert clm["_2.a"] == 3
+    assert clm["_3._0"] == 4
+    assert clm["_3._1.b"] == 5
+    assert isinstance(clm["_3._1"], ConfigManager)
 
 
 def test_deep_keys_evaluable():
     clm = ConfigListManager(TEST_LIST).convert()
     for key in clm.deep_keys():
-        assert eval(f"clm.{key}") == clm.get_deep_key(key)
+        assert eval(f"clm.{key}") == clm.deep_get(key)
 
 
 def test_depth():

@@ -51,7 +51,8 @@ Usage
 ConfigManager
 -------------
 
-Here's a quick example of how to use the ``ConfigManager`` class:
+Here's a quick example of how to use the ``ConfigManager`` class. First create a
+``ConfigManager`` object from a dictionary:
 
 .. code-block:: python
 
@@ -70,10 +71,33 @@ Here's a quick example of how to use the ``ConfigManager`` class:
 
     config = ConfigManager.from_dict(config_data)
 
-    # Access nested keys using dot notation
+Access nested keys attribute-style using dot notation:
+
+.. code-block:: python
+
     print(config.database.host)  # Output: localhost
     print(config.database.port)  # Output: 5432
 
+You can also set values using dot notation:
+
+.. code-block:: python
+
+    config.database.host = "impala.company.com"
+    print(config.database.host)  # Output: impala.company.com
+
+Alternatively, you can directly look up nested keys:
+
+.. code-block:: python
+
+    print(config["database.host"])  # Output: localhost
+    print(config["database.port"])  # Output: 5432
+
+And of course, you can access them the old fashioned way:
+
+.. code-block:: python
+
+    print(config["database"]["host"])  # Output: localhost
+    print(config["database"]["port"])  # Output: 5432
 
 ConfigListManager
 -----------------
@@ -94,17 +118,40 @@ which allows for easier handling of nested keys and data structures.
 
     config_list = ConfigListManager.from_list(list_data)
 
-    # Access elements using indices and dot notation for nested keys
+Access elements using indices and dot notation for nested keys:
+
+.. code-block:: python
+
     print(config_list[0].name)  # Output: Alice
     print(config_list[1].age)   # Output: 25
 
-    # Or, do it all with dot notation, if you prefer
+Or, do it all with dot notation, if you prefer:
+
+.. code-block:: python
+
     print(config_list._0.name) # Output: Alice
     print(config_list._1.age)  # Output: 25
 
-    # You can see all the nested keys using the `deep_keys()` method
+The leading underscore serves as a sort of escape character which allows numeric indices 
+to be accessed as attributes. The leading underscore is always required for attribute access, 
+but is optional in other contexts. You can see all the nested keys using the ``deep_keys()`` 
+method, which shows the leading underscore for numeric indices:
+
+.. code-block:: python
+
     print(config_list.deep_keys())
     # Output: ['_0', '_1', '_0.name', '_0.age', '_1.name', '_1.age']
+
+You can also look up nested keys directly:
+
+.. code-block:: python
+
+    print(config_list["_0.name"]) # Output: Alice
+    print(config_list["_1.age"])  # Output: 25
+
+    # It also works without the underscore
+    print(config_list["0.name"]) # Output: Alice
+    print(config_list["1.age"])  # Output: 25
 
 Loading from a Configuration File
 ---------------------------------
@@ -130,7 +177,7 @@ Alternative Constructors
 It's generally recommended to use one of the ``from_*()`` constructors
 (e.g. ``from_dict()``, ``from_yaml()``) to create either a ``ConfigManager``
 or ``ConfigListManager``, because these class methods automatically
-convert nested dictionaries and lists to manager classes. It doesn't affect the
+convert nested dictionaries and lists to manager classes. It shouldn't affect the
 functionality much if you use the main constructor, but it may cost you a few
 milliseconds of processing time down the road, as more conversions must be
 performed on the fly.
@@ -183,7 +230,8 @@ Setting Defaults
 You can set default values for keys that may not be present in the configuration data.
 Simply pass the ``defaults`` keyword argument to any of the ``ConfigManager`` constructors.
 This argument should be a dictionary of default values. If a key is not present in the
-configuration data, the default value will be used instead.
+configuration data, the default value will be used instead. The user configuration is recursively
+merged with the defaults to ensure that nested keys are handled properly.
 
 .. code-block:: python
 

@@ -7,7 +7,7 @@ from collections import UserList
 from typing import Any, List, Optional, Union
 
 import yaml
-from dot_config.constants import DEEP_KEY_LAX
+from dot_config.constants import DEEP_KEY, DEEP_KEY_PROPER
 
 
 class ConfigListManager(UserList):
@@ -23,14 +23,16 @@ class ConfigListManager(UserList):
         if isinstance(i, slice):
             return type(self)(self.data[i]).convert()
         elif self.check_str_idx(i):
-            return self.data[self.as_int(i)]
+            return self.convert().data[self.as_int(i)]
+        elif isinstance(i, str) and DEEP_KEY_PROPER.fullmatch(i) is not None:
+            return self.deep_get(i)
         else:
             return self.convert().data[i]
 
     def __setitem__(self, i, item):
         if self.check_str_idx(i):
             i = self.as_int(i)
-        self.data[i] = item
+        self.data[i] = self.convert_item(item)
         # warnings.warn(f"Configuration item {i} set to {item} after initialization!")
 
     def __getattr__(self, name: str) -> Any:
@@ -141,8 +143,8 @@ class ConfigListManager(UserList):
                     keys.append(f"_{i}.{k}")
         return keys
 
-    def get_deep_key(self, key: str) -> Any:
-        if DEEP_KEY_LAX.fullmatch(key) is None:
+    def deep_get(self, key: str) -> Any:
+        if DEEP_KEY.fullmatch(key) is None:
             raise ValueError(f"Key '{key}' is not a valid deep key.")
         keys = key.split(".")
         value = self.convert()

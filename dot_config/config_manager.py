@@ -10,7 +10,7 @@ from typing import Any, Iterable, List, Optional, Union
 
 import toml
 import yaml
-from dot_config.constants import DEEP_KEY_STRICT, DEEP_KEY_LAX, DUNDER, PRIVATE
+from dot_config.constants import DEEP_KEY_PROPER, DEEP_KEY, DUNDER, PRIVATE
 
 logger = logging.getLogger(__name__)
 
@@ -115,8 +115,8 @@ class ConfigManager(UserDict):
 
     def __getitem__(self, key: str) -> Any:
         """Get an item."""
-        if DEEP_KEY_STRICT.fullmatch(key) is not None:
-            return self.get_deep_key(key)
+        if DEEP_KEY_PROPER.fullmatch(key) is not None:
+            return self.deep_get(key)
         return self.convert().data[key]
 
     def __setitem__(self, key: str, item: Any) -> None:
@@ -146,9 +146,9 @@ class ConfigManager(UserDict):
                 keys.extend([f"{k}.{i}" for i in v.deep_keys()])
         return keys
 
-    def get_deep_key(self, key: str) -> Any:
+    def deep_get(self, key: str) -> Any:
         """Get a value using dot notation."""
-        if DEEP_KEY_LAX.fullmatch(key) is None:
+        if DEEP_KEY.fullmatch(key) is None:
             raise ValueError(f"Key '{key}' is not a valid deep key.")
         keys = key.split(".")
         value = self.convert()
@@ -162,7 +162,7 @@ class ConfigManager(UserDict):
     def set_deep_key(self, key: str, value: Any) -> None:
         """Set a value using dot notation."""
         raise NotImplementedError("This method is not yet implemented.")
-        if DEEP_KEY_LAX.fullmatch(key) is None:
+        if DEEP_KEY.fullmatch(key) is None:
             raise ValueError(f"Key '{key}' is not a valid deep key.")
         keys = key.split(".")
         item = self

@@ -228,7 +228,7 @@ def test_setattr_nested():
     # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
     cm.d.h[2].i = 3
     assert cm.d.h[2].i == 3
-    # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
+    # with pytest.warns(UserWarning, mget_deep_keyatch=SETITEM_WARNING_MSG):
     cm.i.m.q[1].r *= 2
     assert cm.i.m.q[1].r == 12
 
@@ -238,28 +238,62 @@ def test_deep_keys():
     assert set(cm.deep_keys()) == TEST_DEEP_KEYS
 
 
-def test_get_deep_key():
+def test_deep_get():
     cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
-    assert cm.get_deep_key("d.f.g") == 6
-    assert cm.get_deep_key("d.h._0") == 8
-    assert cm.get_deep_key("d.h._1") == 2
-    assert cm.get_deep_key("d.h._2.i") == 5
-    assert cm.get_deep_key("i.m.q._1.r") == 6
-    assert cm.get_deep_key("i.m.q._1.s") == 7
-    assert isinstance(cm.get_deep_key("d"), ConfigManager)
-    assert isinstance(cm.get_deep_key("d.f"), ConfigManager)
-    assert isinstance(cm.get_deep_key("d.h._2"), ConfigManager)
-    assert isinstance(cm.get_deep_key("i"), ConfigManager)
-    assert isinstance(cm.get_deep_key("i.m"), ConfigManager)
-    assert isinstance(cm.get_deep_key("i.m.q._1"), ConfigManager)
-    assert isinstance(cm.get_deep_key("i.m.q"), ConfigListManager)
-    assert isinstance(cm.get_deep_key("d.h"), ConfigListManager)
+    assert cm.deep_get("d.f.g") == 6
+    assert cm.deep_get("d.h._0") == 8
+    assert cm.deep_get("d.h._1") == 2
+    assert cm.deep_get("d.h._2.i") == 5
+    assert cm.deep_get("i.m.q._1.r") == 6
+    assert cm.deep_get("i.m.q._1.s") == 7
+    assert isinstance(cm.deep_get("d"), ConfigManager)
+    assert isinstance(cm.deep_get("d.f"), ConfigManager)
+    assert isinstance(cm.deep_get("d.h._2"), ConfigManager)
+    assert isinstance(cm.deep_get("i"), ConfigManager)
+    assert isinstance(cm.deep_get("i.m"), ConfigManager)
+    assert isinstance(cm.deep_get("i.m.q._1"), ConfigManager)
+    assert isinstance(cm.deep_get("i.m.q"), ConfigListManager)
+    assert isinstance(cm.deep_get("d.h"), ConfigListManager)
+    # Without underscores
+    assert cm.deep_get("d.h.0") == 8
+    assert cm.deep_get("d.h.1") == 2
+    assert cm.deep_get("d.h.2.i") == 5
+    assert cm.deep_get("i.m.q.1.r") == 6
+    assert cm.deep_get("i.m.q.1.s") == 7
+    assert isinstance(cm.deep_get("d.h.2"), ConfigManager)
+    assert isinstance(cm.deep_get("i.m.q.1"), ConfigManager)
+
+
+def test_deep_lookup():
+    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    assert cm["d.f.g"] == 6
+    assert cm["d.h._0"] == 8
+    assert cm["d.h._1"] == 2
+    assert cm["d.h._2.i"] == 5
+    assert cm["i.m.q._1.r"] == 6
+    assert cm["i.m.q._1.s"] == 7
+    assert isinstance(cm["d"], ConfigManager)
+    assert isinstance(cm["d.f"], ConfigManager)
+    assert isinstance(cm["d.h._2"], ConfigManager)
+    assert isinstance(cm["i"], ConfigManager)
+    assert isinstance(cm["i.m"], ConfigManager)
+    assert isinstance(cm["i.m.q._1"], ConfigManager)
+    assert isinstance(cm["i.m.q"], ConfigListManager)
+    assert isinstance(cm["d.h"], ConfigListManager)
+    # Without underscores
+    assert cm["d.h.0"] == 8
+    assert cm["d.h.1"] == 2
+    assert cm["d.h.2.i"] == 5
+    assert cm["i.m.q.1.r"] == 6
+    assert cm["i.m.q.1.s"] == 7
+    assert isinstance(cm["d.h.2"], ConfigManager)
+    assert isinstance(cm["i.m.q.1"], ConfigManager)
 
 
 def test_deep_keys_evaluable():
     cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     for key in cm.deep_keys():
-        assert eval(f"cm.{key}") == cm.get_deep_key(key)
+        assert eval(f"cm.{key}") == cm.deep_get(key)
 
 
 def test_depth():
