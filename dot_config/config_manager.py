@@ -372,6 +372,7 @@ class ConfigManager(UserDict):
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
         safe: bool = False,
+        encoding: str = "utf-8",
     ) -> "ConfigManager":
         """Create nested ConfigManagers from a YAML file.
 
@@ -389,6 +390,8 @@ class ConfigManager(UserDict):
                 * "warn": raise a warning
         safe : bool, optional
             Whether to use safe loading, by default False.
+        encoding : str, optional
+            Encoding of the YAML file, by default "utf-8".
 
         Returns
         -------
@@ -404,7 +407,7 @@ class ConfigManager(UserDict):
 
         """
         load = yaml.safe_load if safe else yaml.full_load
-        with open(path) as f:
+        with open(path, encoding=encoding) as f:
             data = load(f)
         if isinstance(data, list):
             raise TypeError(
@@ -425,6 +428,7 @@ class ConfigManager(UserDict):
         defaults: dict = None,
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
+        encoding: str = "utf-8",
     ) -> "ConfigManager":
         """Create nested ConfigManagers from a JSON file.
 
@@ -440,6 +444,8 @@ class ConfigManager(UserDict):
             Action to take if any keys are missing, by default "raise". Options are:
                 * "raise": raise a KeyError
                 * "warn": raise a warning
+        encoding : str, optional
+            Encoding of the JSON file, by default "utf-8".
 
         Returns
         -------
@@ -454,7 +460,7 @@ class ConfigManager(UserDict):
             If the JSON file encodes a list.
 
         """
-        with open(path) as f:
+        with open(path, encoding=encoding) as f:
             data = json.load(f)
         if isinstance(data, list):
             raise TypeError(
@@ -475,6 +481,7 @@ class ConfigManager(UserDict):
         defaults: dict = None,
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
+        encoding: str = "utf-8",
     ) -> "ConfigManager":
         """Create nested managers from a TOML file.
 
@@ -490,6 +497,8 @@ class ConfigManager(UserDict):
             Action to take if any keys are missing, by default "raise". Options are:
                 * "raise": raise a KeyError
                 * "warn": raise a warning
+        encoding : str, optional
+            Encoding of the TOML file, by default "utf-8".
 
         Returns
         -------
@@ -497,7 +506,7 @@ class ConfigManager(UserDict):
             Nested managers created from the TOML file.
 
         """
-        with open(path) as f:
+        with open(path, encoding=encoding) as f:
             data = toml.load(f)
 
         return cls(
@@ -507,7 +516,9 @@ class ConfigManager(UserDict):
             if_missing=if_missing,
         ).convert()
 
-    def to_yaml(self, path: Optional[str] = None) -> Union[str, bool]:
+    def to_yaml(
+        self, path: Optional[str] = None, encoding: str = "utf-8"
+    ) -> Union[str, bool]:
         """Write the configuration to a YAML file.
 
         If `path` is None, return the YAML string. Otherwise, write
@@ -517,6 +528,8 @@ class ConfigManager(UserDict):
         ----------
         path : str, optional
             Path to YAML file.
+        encoding : str, optional
+            Encoding of the YAML file, by default "utf-8".
 
         Returns
         -------
@@ -526,11 +539,13 @@ class ConfigManager(UserDict):
         if path is None:
             return yaml.dump(self.deconvert())
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding=encoding) as f:
             yaml.dump(self.deconvert(), f)
         return os.path.isfile(path)
 
-    def to_json(self, path: Optional[str] = None) -> Union[str, bool]:
+    def to_json(
+        self, path: Optional[str] = None, encoding: str = "utf-8"
+    ) -> Union[str, bool]:
         """Write the configuration to a JSON file.
 
         If `path` is None, return the JSON string. Otherwise, write
@@ -540,6 +555,8 @@ class ConfigManager(UserDict):
         ----------
         path : str, optional
             Path to JSON file.
+        encoding : str, optional
+            Encoding of the JSON file, by default "utf-8".
 
         Returns
         -------
@@ -550,11 +567,13 @@ class ConfigManager(UserDict):
         if path is None:
             return json.dumps(self.deconvert())
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding=encoding) as f:
             json.dump(self.deconvert(), f)
         return os.path.isfile(path)
 
-    def to_toml(self, path: Optional[str] = None) -> Union[str, bool]:
+    def to_toml(
+        self, path: Optional[str] = None, encoding: str = "utf-8"
+    ) -> Union[str, bool]:
         """Write the configuration to a TOML file.
 
         If `path` is None, return the TOML string. Otherwise, write
@@ -564,6 +583,8 @@ class ConfigManager(UserDict):
         ----------
         path : str
             Path to TOML file.
+        encoding : str, optional
+            Encoding of the TOML file, by default "utf-8".
 
         Returns
         -------
@@ -573,6 +594,6 @@ class ConfigManager(UserDict):
         if path is None:
             return toml.dumps(self.deconvert())
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding=encoding) as f:
             toml.dump(self.deconvert(), f)
         return os.path.isfile(path)

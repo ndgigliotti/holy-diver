@@ -11,7 +11,7 @@ from dot_config.constants import DEEP_KEY, DEEP_KEY_PROPER
 
 
 class ConfigListManager(UserList):
-    _attr_idx_pat = re.compile(r"^_?([0-9]+)$")
+    _attr_idx_pat = re.compile(r"^[_i]?([0-9]+)$")
 
     def check_str_idx(self, idx):
         return isinstance(idx, str) and self._attr_idx_pat.fullmatch(idx) is not None
@@ -195,7 +195,9 @@ class ConfigListManager(UserList):
         return cls(list).convert()
 
     @classmethod
-    def from_yaml(cls, path: str, safe: bool = False) -> "ConfigListManager":
+    def from_yaml(
+        cls, path: str, safe: bool = False, encoding: str = "utf-8"
+    ) -> "ConfigListManager":
         """Create a ConfigListManager from a YAML file.
 
         Parameters
@@ -204,6 +206,8 @@ class ConfigListManager(UserList):
             Path to YAML file.
         safe : bool, optional
             If True, load the YAML file safely. Defaults to False.
+        encoding : str, optional
+            Encoding of the YAML file. Defaults to "utf-8".
 
         Returns
         -------
@@ -217,7 +221,7 @@ class ConfigListManager(UserList):
 
         """
         load = yaml.safe_load if safe else yaml.full_load
-        with open(path) as f:
+        with open(path, encoding=encoding) as f:
             cfg = load(f)
         if isinstance(cfg, dict):
             raise TypeError(
@@ -227,13 +231,15 @@ class ConfigListManager(UserList):
         return cls(cfg).convert()
 
     @classmethod
-    def from_json(cls, path: str) -> "ConfigListManager":
+    def from_json(cls, path: str, encoding: str = "utf-8") -> "ConfigListManager":
         """Create a ConfigListManager from a JSON file.
 
         Parameters
         ----------
         path : str
             Path to JSON file.
+        encoding : str, optional
+            Encoding of the JSON file. Defaults to "utf-8".
 
         Returns
         -------
@@ -246,7 +252,7 @@ class ConfigListManager(UserList):
             If the JSON file encodes a dict.
 
         """
-        with open(path) as f:
+        with open(path, encoding=encoding) as f:
             cfg = json.load(f)
         if isinstance(cfg, dict):
             raise TypeError(
@@ -255,7 +261,9 @@ class ConfigListManager(UserList):
             )
         return cls(cfg).convert()
 
-    def to_yaml(self, path: Optional[str] = None) -> Union[str, bool]:
+    def to_yaml(
+        self, path: Optional[str] = None, encoding: str = "utf-8"
+    ) -> Union[str, bool]:
         """Write the configuration to a YAML file.
 
         If `path` is None, return the YAML string. Otherwise, write
@@ -265,6 +273,8 @@ class ConfigListManager(UserList):
         ----------
         path : str, optional
             Path to YAML file.
+        encoding : str, optional
+            Encoding of the YAML file. Defaults to "utf-8".
 
         Returns
         -------
@@ -275,11 +285,11 @@ class ConfigListManager(UserList):
         if path is None:
             return yaml.dump(self.deconvert())
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding=encoding) as f:
             yaml.dump(self.deconvert(), f)
         return os.path.isfile(path)
 
-    def to_json(self, path: Optional[str] = None) -> Union[str, bool]:
+    def to_json(self, path: Optional[str] = None, encoding="utf-8") -> Union[str, bool]:
         """Write the configuration to a JSON file.
 
         If `path` is None, return the JSON string. Otherwise, write
@@ -289,6 +299,8 @@ class ConfigListManager(UserList):
         ----------
         path : str, optional
             Path to JSON file.
+        encoding : str, optional
+            Encoding of the JSON file. Defaults to "utf-8".
 
         Returns
         -------
@@ -299,6 +311,6 @@ class ConfigListManager(UserList):
         if path is None:
             return json.dumps(self.deconvert())
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding=encoding) as f:
             json.dump(self.deconvert(), f)
         return os.path.isfile(path)
