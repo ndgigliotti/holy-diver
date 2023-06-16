@@ -11,7 +11,7 @@ from dot_config.constants import DEEP_KEY, DEEP_KEY_PROPER
 
 
 class ConfigListManager(UserList):
-    _attr_idx_pat = re.compile(r"^[_i]?([0-9]+)$")
+    _attr_idx_pat = re.compile(r"^[_]?([0-9]+)$")
 
     def check_str_idx(self, idx):
         return isinstance(idx, str) and self._attr_idx_pat.fullmatch(idx) is not None
