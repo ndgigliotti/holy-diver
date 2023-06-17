@@ -132,10 +132,10 @@ Or, do it all with dot notation, if you prefer:
     print(config_list._0.name) # Output: Alice
     print(config_list._1.age)  # Output: 25
 
-The leading underscore serves as a sort of escape character which allows numeric indices 
-to be accessed as attributes. The leading underscore is always required for attribute access, 
-but is optional in other contexts. You can see all the nested keys using the ``deep_keys()`` 
-method, which shows the leading underscore for numeric indices:
+The leading underscore allows numeric indices to be accessed as attributes. The
+leading underscore is always required for attribute access, but is optional in other
+contexts. You can see all the nested keys using the ``deep_keys()`` method, which shows
+the leading underscore for numeric indices:
 
 .. code-block:: python
 
