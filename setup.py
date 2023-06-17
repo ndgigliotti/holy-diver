@@ -59,7 +59,7 @@ setup(
         "nested config",
         "deeply nested",
     ],
-    name="holy_diver",
+    name="holy-diver",
     packages=find_packages(include=["holy_diver", "holy_diver.*"]),
     test_suite="tests",
     tests_require=test_requirements,
