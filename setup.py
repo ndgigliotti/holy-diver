@@ -32,7 +32,7 @@ setup(
     description="A dot-accessible configuration manager for deeply nested configuration files.",
     install_requires=requirements,
     license="MIT license",
-    long_description=readme + "\n\n" + history,
+    long_description=readme,
     long_description_content_type="text/x-rst",
     include_package_data=True,
     keywords=[
