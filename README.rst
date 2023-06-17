@@ -231,8 +231,8 @@ merged with the defaults to ensure that nested keys are handled properly.
     default_config = {
         "database": {
             "host": "impala.megacorp.com", # Will be overridden
-            "database.port": 21050, # Will be overridden
-            "database.auth_method": "LDAP", # Not present in the config data
+            "port": 21050, # Will be overridden
+            "auth_method": "LDAP", # Not present in the config data
         }
     }
     config_data = {"database": {"host": "localhost", "port": 5432}}
