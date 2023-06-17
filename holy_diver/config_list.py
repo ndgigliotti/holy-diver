@@ -8,9 +8,10 @@ from typing import Any, List, Optional, Union
 
 import yaml
 from holy_diver.constants import DEEP_KEY, DEEP_KEY_PROPER
+from holy_diver.config_mixin import ConfigMixin
 
 
-class ConfigList(UserList):
+class ConfigList(UserList, ConfigMixin):
     _attr_idx_pat = re.compile(r"^[_]?([0-9]+)$")
 
     def check_str_idx(self, idx):
@@ -79,17 +80,6 @@ class ConfigList(UserList):
             return type(self)([self.convert_item(x) for x in item])
         return item
 
-    def convert(self) -> "ConfigList":
-        """Recursively convert nested dicts and lists to nested managers.
-
-        Returns
-        -------
-        ConfigList
-            New hierarchy of managers and values.
-
-        """
-        return self.convert_item(self.data)
-
     def deconvert_item(self, item: Any) -> Any:
         """Recursively deconvert nested managers to nested dicts and lists.
 
@@ -112,17 +102,6 @@ class ConfigList(UserList):
             return [self.deconvert_item(x) for x in item]
         return item
 
-    def deconvert(self) -> Any:
-        """Recursively deconvert nested managers to nested dicts and lists.
-
-        Returns
-        -------
-        Any
-            New hierarchy of dicts and lists.
-
-        """
-        return self.deconvert_item(self)
-
     def deep_keys(self) -> List[str]:
         """Return a list of all keys in the configuration tree.
 
@@ -132,89 +111,14 @@ class ConfigList(UserList):
             List of all keys in the configuration tree.
 
         """
-        from holy_diver.config import Config
-
         keys = []
         self = self.convert()
         for i in range(len(self.data)):
             keys.append(f"_{i}")
-            if isinstance(self.data[i], (type(self), Config)):
+            if isinstance(self.data[i], ConfigMixin):
                 for k in self.data[i].deep_keys():
                     keys.append(f"_{i}.{k}")
         return keys
-
-    def deep_get(self, key: str) -> Any:
-        if DEEP_KEY.fullmatch(key) is None:
-            raise ValueError(f"Key '{key}' is not a valid deep key.")
-        keys = key.split(".")
-        value = self.convert()
-        for k in keys:
-            try:
-                value = value[k]
-            except KeyError:
-                raise KeyError(f"Key '{key}' not found.")
-        return value
-
-    def deep_items(self) -> list[str]:
-        """Return a list of tuples of deep keys and values."""
-        return [(k, self.deep_get(k)) for k in self.deep_keys()]
-
-    @property
-    def depth(self) -> int:
-        """Return the depth of the configuration tree."""
-        return max([k.count(".") for k in self.deep_keys()])
-
-    def search(
-        self, key: str, regex=False, return_values=False
-    ) -> Union[dict[str, Any], list[Any]]:
-        """Search for a key in the configuration tree.
-
-        Parameters
-        ----------
-        key : str
-            Key or key pattern to search for. Will be matched against
-            the lowest key in the hierarchy. If `regex` is False, must be
-            an exact match. If `regex` is True, will try to match the
-            lowest key using `re.search`.
-        regex : bool, optional
-            Whether to use regex pattern matching, by default False.
-        return_values : bool, optional
-            Whether to return a list of values instead of a dictionary,
-            by default False.
-
-        Returns
-        -------
-        Union[dict[str, Any], list[Any]]
-            Dictionary of keys and values, or list of values.
-
-        """
-        results = {}
-        for k, v in self.deep_items():
-            final_key = k.split(".")[-1]
-            if regex:
-                if re.search(key, final_key) is not None:
-                    results[k] = v
-            else:
-                if final_key == key:
-                    results[k] = v
-        return list(results.values()) if return_values else results
-
-    def to_string(self) -> str:
-        """Convert the ConfigList to a string.
-
-        Returns
-        -------
-        str
-            String representation of the ConfigList.
-
-        """
-        return pprint.pformat(self.deconvert())
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({repr(self.data)})"
-
-    def __str__(self) -> str:
-        return self.to_string()
 
     @classmethod
     def from_list(cls, list: List[Any]) -> "ConfigList":
