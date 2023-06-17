@@ -1,7 +1,9 @@
+import json
+import os
 import pprint
 import re
 import abc
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, Optional, Union
 import warnings
 
 import yaml
@@ -200,3 +202,58 @@ class ConfigMixin(abc.ABC):
 
     def __str__(self) -> str:
         return self.to_string()
+
+    def to_yaml(
+        self, path: Optional[str] = None, encoding: str = "utf-8"
+    ) -> Union[str, bool]:
+        """Write the configuration to a YAML file.
+
+        If `path` is None, return the YAML string. Otherwise, write
+        to the file at `path` and return True if successful.
+
+        Parameters
+        ----------
+        path : str, optional
+            Path to YAML file.
+        encoding : str, optional
+            Encoding of the YAML file, by default "utf-8".
+
+        Returns
+        -------
+        str or bool
+            YAML string or True if successful.
+        """
+        if path is None:
+            return yaml.dump(self.deconvert())
+
+        with open(path, "w", encoding=encoding) as f:
+            yaml.dump(self.deconvert(), f)
+        return os.path.isfile(path)
+
+    def to_json(
+        self, path: Optional[str] = None, encoding: str = "utf-8"
+    ) -> Union[str, bool]:
+        """Write the configuration to a JSON file.
+
+        If `path` is None, return the JSON string. Otherwise, write
+        to the file at `path` and return True if successful.
+
+        Parameters
+        ----------
+        path : str, optional
+            Path to JSON file.
+        encoding : str, optional
+            Encoding of the JSON file, by default "utf-8".
+
+        Returns
+        -------
+        str or bool
+            JSON string or True if successful.
+
+        """
+        if path is None:
+            return json.dumps(self.deconvert())
+
+        with open(path, "w", encoding=encoding) as f:
+            json.dump(self.deconvert(), f)
+        return os.path.isfile(path)

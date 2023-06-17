@@ -4,7 +4,7 @@ import pprint
 import re
 import warnings
 from collections import UserList
-from typing import Any, List, Optional, Union
+from typing import Any, Iterable, List, Optional, Union
 
 import yaml
 from holy_diver.constants import DEEP_KEY, DEEP_KEY_PROPER
@@ -13,6 +13,16 @@ from holy_diver.config_mixin import ConfigMixin
 
 class ConfigList(UserList, ConfigMixin):
     _attr_idx_pat = re.compile(r"^[_]?([0-9]+)$")
+
+    def __init__(
+        self,
+        data: list = None,
+        required_keys: Optional[Iterable[str]] = None,
+        if_missing: str = "raise",
+    ):
+        super().__init__(initlist=data)
+        if required_keys is not None:
+            self.check_required_keys(required_keys, if_missing=if_missing)
 
     def check_str_idx(self, idx):
         return isinstance(idx, str) and self._attr_idx_pat.fullmatch(idx) is not None
@@ -139,7 +149,12 @@ class ConfigList(UserList, ConfigMixin):
 
     @classmethod
     def from_yaml(
-        cls, path: str, safe: bool = False, encoding: str = "utf-8"
+        cls,
+        path: str,
+        required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
+        safe: bool = False,
+        encoding: str = "utf-8",
     ) -> "ConfigList":
         """Create a ConfigList from a YAML file.
 
@@ -147,6 +162,10 @@ class ConfigList(UserList, ConfigMixin):
         ----------
         path : str
             Path to YAML file.
+        required_keys : Iterable[str], optional
+            Keys that must be present in the configuration. Defaults to None.
+        if_missing : str, optional
+            What to do if a required key is missing. Defaults to "raise".
         safe : bool, optional
             If True, load the YAML file safely. Defaults to False.
         encoding : str, optional
@@ -171,16 +190,26 @@ class ConfigList(UserList, ConfigMixin):
                 "YAML file must encode a list, not a dict. "
                 "Use `Config.from_yaml` instead."
             )
-        return cls(cfg).convert()
+        return cls(cfg, required_keys=required_keys, if_missing=if_missing).convert()
 
     @classmethod
-    def from_json(cls, path: str, encoding: str = "utf-8") -> "ConfigList":
+    def from_json(
+        cls,
+        path: str,
+        required_keys: Iterable[str] = None,
+        if_missing: str = "raise",
+        encoding: str = "utf-8",
+    ) -> "ConfigList":
         """Create a ConfigList from a JSON file.
 
         Parameters
         ----------
         path : str
             Path to JSON file.
+        required_keys : Iterable[str], optional
+            Keys that must be present in the configuration. Defaults to None.
+        if_missing : str, optional
+            What to do if a required key is missing. Defaults to "raise".
         encoding : str, optional
             Encoding of the JSON file. Defaults to "utf-8".
 
@@ -202,58 +231,4 @@ class ConfigList(UserList, ConfigMixin):
                 "JSON file must encode a list, not a dict. "
                 "Use `Config.from_json` instead."
             )
-        return cls(cfg).convert()
-
-    def to_yaml(
-        self, path: Optional[str] = None, encoding: str = "utf-8"
-    ) -> Union[str, bool]:
-        """Write the configuration to a YAML file.
-
-        If `path` is None, return the YAML string. Otherwise, write
-        to the file at `path` and return True if successful.
-
-        Parameters
-        ----------
-        path : str, optional
-            Path to YAML file.
-        encoding : str, optional
-            Encoding of the YAML file. Defaults to "utf-8".
-
-        Returns
-        -------
-        str or bool
-            YAML string or True if successful.
-
-        """
-        if path is None:
-            return yaml.dump(self.deconvert())
-
-        with open(path, "w", encoding=encoding) as f:
-            yaml.dump(self.deconvert(), f)
-        return os.path.isfile(path)
-
-    def to_json(self, path: Optional[str] = None, encoding="utf-8") -> Union[str, bool]:
-        """Write the configuration to a JSON file.
-
-        If `path` is None, return the JSON string. Otherwise, write
-        to the file at `path` and return True if successful.
-
-        Parameters
-        ----------
-        path : str, optional
-            Path to JSON file.
-        encoding : str, optional
-            Encoding of the JSON file. Defaults to "utf-8".
-
-        Returns
-        -------
-        str or bool
-            JSON string or True if successful.
-
-        """
-        if path is None:
-            return json.dumps(self.deconvert())
-
-        with open(path, "w", encoding=encoding) as f:
-            json.dump(self.deconvert(), f)
-        return os.path.isfile(path)
+        return cls(cfg, required_keys=required_keys, if_missing=if_missing).convert()

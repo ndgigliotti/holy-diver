@@ -127,6 +127,19 @@ def test_deep_keys():
     assert set(deep_keys) == TEST_DEEP_KEYS
 
 
+def test_check_required_keys():
+    clm = ConfigList(TEST_LIST).convert()
+    missing = ["_25.c.d", "_40.h.k"]
+    with pytest.raises(KeyError):
+        clm.check_required_keys(missing, if_missing="raise")
+    with pytest.warns(UserWarning):
+        clm.check_required_keys(missing, if_missing="warn")
+    returned_keys = clm.check_required_keys(missing, if_missing="return")
+    assert set(returned_keys) == set(missing)
+    # Check that no error is raised
+    clm.check_required_keys(TEST_DEEP_KEYS, if_missing="raise")
+
+
 def test_deep_get():
     clm = ConfigList(TEST_LIST)
     # Without underscore
