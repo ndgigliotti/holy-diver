@@ -64,7 +64,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/ndgigliotti/holy-diver",
-    download_url="https://github.com/ndgigliotti/holy-diver/archive/refs/tags/v0.1.0-alpha.1.tar.gz",
-    version="v0.1.0-alpha.1",
+    download_url="https://github.com/ndgigliotti/holy-diver/archive/refs/tags/v0.1.0-alpha.2.tar.gz",
+    version="v0.1.0-alpha.2",
     zip_safe=False,
 )
