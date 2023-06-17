@@ -1,4 +1,4 @@
-Welcome to dot-config's documentation!
+Welcome to holy-diver's documentation!
 ======================================
 
 .. toctree::

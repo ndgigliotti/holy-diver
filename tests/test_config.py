@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `dot_config` package."""
+"""Tests for `holy_diver` package."""
 
 import json
 import os
@@ -12,7 +12,7 @@ import pytest
 import toml
 import yaml
 
-from dot_config import ConfigListManager, ConfigManager
+from holy_diver import ConfigList, Config
 
 # Test data
 TEST_DEFAULTS = {
@@ -79,7 +79,7 @@ LOAD_WRONG_TYPE_MSG = "must encode a dict, not a list"
 
 # Test cases
 def test_init_with_defaults():
-    cm = ConfigManager(defaults=TEST_DEFAULTS)
+    cm = Config(defaults=TEST_DEFAULTS)
     assert cm["a"] == 1
     assert cm["b"] == 2
     assert cm["d"]["e"] == 3
@@ -91,7 +91,7 @@ def test_init_with_defaults():
 
 
 def test_init_with_dict():
-    cm = ConfigManager(data=TEST_DICT)
+    cm = Config(data=TEST_DICT)
     assert cm["b"] == 3
     assert cm["i"]["h"] == 7
     assert cm["i"]["j"] == -3
@@ -105,18 +105,18 @@ def test_init_with_dict():
 
 def test_null_values():
     dict = {"a": None, "b": 3, "c": {"d": None, "e": 5}}
-    cm = ConfigManager(data=dict)
+    cm = Config(data=dict)
     assert cm["a"] is None
 
 
 def test_init_with_bad_keys():
     for k in TEST_BAD_KEYS:
         with pytest.raises(ValueError, match=BAD_KEY_MSG):
-            ConfigManager(data={k: 0})
+            Config(data={k: 0})
 
 
 def test_init_with_defaults_and_dict():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm["a"] == 1
     assert cm["b"] == 3
     assert cm["d"]["e"] == 3
@@ -136,7 +136,7 @@ def test_init_with_defaults_and_dict():
 
 
 def test_getitem():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm["a"] == 1
     assert cm["b"] == 3
     assert cm["d"] == {"e": 3, "f": {"g": 6, "w": 4}, "h": [8, 2, {"i": 5, "j": 9}]}
@@ -149,14 +149,14 @@ def test_getitem():
 
 
 def test_setitem():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
     cm["a"] = 5
     assert cm["a"] == 5
 
 
 def test_getattr():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm.a == 1
     assert cm.b == 3
     assert cm.d == {"e": 3, "f": {"g": 6, "w": 4}, "h": [8, 2, {"i": 5, "j": 9}]}
@@ -169,34 +169,34 @@ def test_getattr():
 
 
 def test_setattr():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
     cm.a = 5
     assert cm["a"] == 5
 
 
 def test_convert():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
-    assert isinstance(cm["d"], ConfigManager)
-    assert isinstance(cm["d"]["f"], ConfigManager)
-    assert isinstance(cm["d"]["h"][2], ConfigManager)
-    assert isinstance(cm["i"], ConfigManager)
-    assert isinstance(cm["i"]["m"], ConfigManager)
-    assert isinstance(cm["i"]["m"]["q"][1], ConfigManager)
-    assert isinstance(cm["i"]["m"]["q"], ConfigListManager)
-    assert isinstance(cm["d"]["h"], ConfigListManager)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    assert isinstance(cm["d"], Config)
+    assert isinstance(cm["d"]["f"], Config)
+    assert isinstance(cm["d"]["h"][2], Config)
+    assert isinstance(cm["i"], Config)
+    assert isinstance(cm["i"]["m"], Config)
+    assert isinstance(cm["i"]["m"]["q"][1], Config)
+    assert isinstance(cm["i"]["m"]["q"], ConfigList)
+    assert isinstance(cm["d"]["h"], ConfigList)
 
 
 def check_conversion_and_values(cm):
-    """Check the recursive conversion and values of a ConfigManager object."""
-    assert isinstance(cm.d, ConfigManager)
-    assert isinstance(cm.d.f, ConfigManager)
-    assert isinstance(cm.d.h[2], ConfigManager)
-    assert isinstance(cm.i, ConfigManager)
-    assert isinstance(cm.i.m, ConfigManager)
-    assert isinstance(cm.i.m.q[1], ConfigManager)
-    assert isinstance(cm.i.m.q, ConfigListManager)
-    assert isinstance(cm.d.h, ConfigListManager)
+    """Check the recursive conversion and values of a Config object."""
+    assert isinstance(cm.d, Config)
+    assert isinstance(cm.d.f, Config)
+    assert isinstance(cm.d.h[2], Config)
+    assert isinstance(cm.i, Config)
+    assert isinstance(cm.i.m, Config)
+    assert isinstance(cm.i.m.q[1], Config)
+    assert isinstance(cm.i.m.q, ConfigList)
+    assert isinstance(cm.d.h, ConfigList)
     assert cm.a == 1
     assert cm.b == 3
     assert cm.d.e == 3
@@ -216,12 +216,12 @@ def check_conversion_and_values(cm):
 
 
 def test_getattr_nested():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     check_conversion_and_values(cm)
 
 
 def test_setattr_nested():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     # with pytest.warns(UserWarning, match=SETITEM_WARNING_MSG):
     cm.d.f.g = -5
     assert cm.d.f.g == -5
@@ -234,82 +234,82 @@ def test_setattr_nested():
 
 
 def test_deep_keys():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     assert set(cm.deep_keys()) == TEST_DEEP_KEYS
 
 
 def test_deep_get():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm.deep_get("d.f.g") == 6
     assert cm.deep_get("d.h._0") == 8
     assert cm.deep_get("d.h._1") == 2
     assert cm.deep_get("d.h._2.i") == 5
     assert cm.deep_get("i.m.q._1.r") == 6
     assert cm.deep_get("i.m.q._1.s") == 7
-    assert isinstance(cm.deep_get("d"), ConfigManager)
-    assert isinstance(cm.deep_get("d.f"), ConfigManager)
-    assert isinstance(cm.deep_get("d.h._2"), ConfigManager)
-    assert isinstance(cm.deep_get("i"), ConfigManager)
-    assert isinstance(cm.deep_get("i.m"), ConfigManager)
-    assert isinstance(cm.deep_get("i.m.q._1"), ConfigManager)
-    assert isinstance(cm.deep_get("i.m.q"), ConfigListManager)
-    assert isinstance(cm.deep_get("d.h"), ConfigListManager)
+    assert isinstance(cm.deep_get("d"), Config)
+    assert isinstance(cm.deep_get("d.f"), Config)
+    assert isinstance(cm.deep_get("d.h._2"), Config)
+    assert isinstance(cm.deep_get("i"), Config)
+    assert isinstance(cm.deep_get("i.m"), Config)
+    assert isinstance(cm.deep_get("i.m.q._1"), Config)
+    assert isinstance(cm.deep_get("i.m.q"), ConfigList)
+    assert isinstance(cm.deep_get("d.h"), ConfigList)
     # Without underscores
     assert cm.deep_get("d.h.0") == 8
     assert cm.deep_get("d.h.1") == 2
     assert cm.deep_get("d.h.2.i") == 5
     assert cm.deep_get("i.m.q.1.r") == 6
     assert cm.deep_get("i.m.q.1.s") == 7
-    assert isinstance(cm.deep_get("d.h.2"), ConfigManager)
-    assert isinstance(cm.deep_get("i.m.q.1"), ConfigManager)
+    assert isinstance(cm.deep_get("d.h.2"), Config)
+    assert isinstance(cm.deep_get("i.m.q.1"), Config)
 
 
 def test_deep_lookup():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     assert cm["d.f.g"] == 6
     assert cm["d.h._0"] == 8
     assert cm["d.h._1"] == 2
     assert cm["d.h._2.i"] == 5
     assert cm["i.m.q._1.r"] == 6
     assert cm["i.m.q._1.s"] == 7
-    assert isinstance(cm["d"], ConfigManager)
-    assert isinstance(cm["d.f"], ConfigManager)
-    assert isinstance(cm["d.h._2"], ConfigManager)
-    assert isinstance(cm["i"], ConfigManager)
-    assert isinstance(cm["i.m"], ConfigManager)
-    assert isinstance(cm["i.m.q._1"], ConfigManager)
-    assert isinstance(cm["i.m.q"], ConfigListManager)
-    assert isinstance(cm["d.h"], ConfigListManager)
+    assert isinstance(cm["d"], Config)
+    assert isinstance(cm["d.f"], Config)
+    assert isinstance(cm["d.h._2"], Config)
+    assert isinstance(cm["i"], Config)
+    assert isinstance(cm["i.m"], Config)
+    assert isinstance(cm["i.m.q._1"], Config)
+    assert isinstance(cm["i.m.q"], ConfigList)
+    assert isinstance(cm["d.h"], ConfigList)
     # Without underscores
     assert cm["d.h.0"] == 8
     assert cm["d.h.1"] == 2
     assert cm["d.h.2.i"] == 5
     assert cm["i.m.q.1.r"] == 6
     assert cm["i.m.q.1.s"] == 7
-    assert isinstance(cm["d.h.2"], ConfigManager)
-    assert isinstance(cm["i.m.q.1"], ConfigManager)
+    assert isinstance(cm["d.h.2"], Config)
+    assert isinstance(cm["i.m.q.1"], Config)
 
 
 def test_deep_keys_evaluable():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     for key in cm.deep_keys():
         assert eval(f"cm.{key}") == cm.deep_get(key)
 
 
 def test_depth():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     assert cm.depth == 4
 
 
 def test_check_required_keys_raise():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
         cm.check_required_keys(TEST_REQUIRED_KEYS_FAIL, if_missing="raise")
     cm.check_required_keys(TEST_REQUIRED_KEYS_PASS, if_missing="raise")
 
 
 def test_check_required_keys_warn():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
         missing_keys = cm.check_required_keys(
             TEST_REQUIRED_KEYS_FAIL, if_missing="warn"
@@ -322,7 +322,7 @@ def test_check_required_keys_warn():
 
 
 def test_check_required_keys_return():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS)
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         missing_keys = cm.check_required_keys(
@@ -334,7 +334,7 @@ def test_check_required_keys_return():
 
 
 def test_deconvert():
-    cm = ConfigManager(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
+    cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS).convert()
     dct = cm.deconvert()
     assert isinstance(dct, dict)
     assert isinstance(dct["d"], dict)
@@ -348,7 +348,7 @@ def test_deconvert():
 
 
 def test_shallow_update():
-    cm = ConfigManager(TEST_DICT).convert()
+    cm = Config(TEST_DICT).convert()
     test_dict_update = {"b": 1, "i": 2, "c": 3}
     cm.update(test_dict_update, deep=False)
     assert cm["b"] == 1
@@ -357,19 +357,19 @@ def test_shallow_update():
 
 
 def test_deep_update():
-    cm = ConfigManager({"a": {"b": {"c": 5}, "h": {"x": 2}}}).convert()
+    cm = Config({"a": {"b": {"c": 5}, "h": {"x": 2}}}).convert()
     cm.update({"w": 7, "a": {"b": {"d": 10}, "h": {"x": -1}}}, deep=True)
     assert cm["w"] == 7
     assert cm["a"]["b"]["c"] == 5
     assert cm["a"]["b"]["d"] == 10
     assert cm["a"]["h"]["x"] == -1
-    assert isinstance(cm["a"]["b"], ConfigManager)
-    assert isinstance(cm["a"]["b"], ConfigManager)
-    assert isinstance(cm["a"]["h"], ConfigManager)
+    assert isinstance(cm["a"]["b"], Config)
+    assert isinstance(cm["a"]["b"], Config)
+    assert isinstance(cm["a"]["h"], Config)
 
 
 def test_from_dict():
-    cm = ConfigManager.from_dict(
+    cm = Config.from_dict(
         TEST_DICT, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
     )
     check_conversion_and_values(cm)
@@ -377,7 +377,7 @@ def test_from_dict():
 
 # Replace "path/to/yaml" and "path/to/json" with the actual paths to your test files
 def test_from_yaml():
-    with TemporaryDirectory(prefix="test_dot_config_") as d:
+    with TemporaryDirectory(prefix="test_holy_diver_") as d:
         # Prepare a temporary YAML file
         good_fname = os.path.join(d, "config.yaml")
         bad_fname = os.path.join(d, "bad_config.yaml")
@@ -387,7 +387,7 @@ def test_from_yaml():
 
         # Load the listlike YAML file and trigger error
         with pytest.raises(TypeError, match=LOAD_WRONG_TYPE_MSG):
-            ConfigManager.from_yaml(
+            Config.from_yaml(
                 bad_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_PASS,
@@ -396,7 +396,7 @@ def test_from_yaml():
 
         # Load the correct YAML file and trigger error
         with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
-            ConfigManager.from_yaml(
+            Config.from_yaml(
                 good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
@@ -404,14 +404,14 @@ def test_from_yaml():
             )
         # Load the correct YAML file and trigger warning
         with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
-            ConfigManager.from_yaml(
+            Config.from_yaml(
                 good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
                 if_missing="warn",
             )
         # Load the correct YAML file for real
-        cm = ConfigManager.from_yaml(
+        cm = Config.from_yaml(
             good_fname, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
         )
     # Check the recursive conversion and loaded values
@@ -419,7 +419,7 @@ def test_from_yaml():
 
 
 def test_from_json():
-    with TemporaryDirectory(prefix="test_dot_config_") as d:
+    with TemporaryDirectory(prefix="test_holy_diver_") as d:
         # Prepare a temporary JSON file
         good_fname = os.path.join(d, "config.json")
         bad_fname = os.path.join(d, "bad_config.json")
@@ -429,7 +429,7 @@ def test_from_json():
 
         # Load the listlike JSON file and trigger error
         with pytest.raises(TypeError, match=LOAD_WRONG_TYPE_MSG):
-            ConfigManager.from_json(
+            Config.from_json(
                 bad_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_PASS,
@@ -437,7 +437,7 @@ def test_from_json():
             )
         # Load the correct JSON file and trigger error
         with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
-            ConfigManager.from_json(
+            Config.from_json(
                 good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
@@ -445,14 +445,14 @@ def test_from_json():
             )
         # Load the correct JSON file and trigger warning
         with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
-            ConfigManager.from_json(
+            Config.from_json(
                 good_fname,
                 defaults=TEST_DEFAULTS,
                 required_keys=TEST_REQUIRED_KEYS_FAIL,
                 if_missing="warn",
             )
         # Load the correct JSON file for real
-        cm = ConfigManager.from_json(
+        cm = Config.from_json(
             good_fname, defaults=TEST_DEFAULTS, required_keys=TEST_REQUIRED_KEYS_PASS
         )
     # Check the recursive conversion and loaded values
@@ -460,7 +460,7 @@ def test_from_json():
 
 
 def test_from_toml():
-    with TemporaryDirectory(prefix="test_dot_config_") as d:
+    with TemporaryDirectory(prefix="test_holy_diver_") as d:
         # Prepare a temporary TOML file
         fname = os.path.join(d, "config.toml")
         with open(fname, "w") as f:
@@ -468,24 +468,24 @@ def test_from_toml():
 
         # Load the TOML file and trigger error
         with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
-            ConfigManager.from_toml(
+            Config.from_toml(
                 fname,
                 required_keys=["section_3"],
                 if_missing="raise",
             )
         # Load the TOML file and trigger warning
         with pytest.warns(UserWarning, match=MISSING_KEYS_MSG):
-            ConfigManager.from_toml(
+            Config.from_toml(
                 fname,
                 required_keys=["section_3"],
                 if_missing="warn",
             )
         # Load the TOML file for real
-        cm = ConfigManager.from_toml(fname)
+        cm = Config.from_toml(fname)
 
     # Check the recursive conversion and loaded values
-    assert isinstance(cm.section_1, ConfigManager)
-    assert isinstance(cm.section_2, ConfigManager)
+    assert isinstance(cm.section_1, Config)
+    assert isinstance(cm.section_2, Config)
     assert len(cm) == len(TEST_SECTIONS)
     assert cm.section_1.a == 1
     assert cm.section_1.b == 2
@@ -494,10 +494,10 @@ def test_from_toml():
 
 
 def test_to_yaml():
-    with TemporaryDirectory(prefix="test_dot_config_") as d:
+    with TemporaryDirectory(prefix="test_holy_diver_") as d:
         # Prepare a temporary YAML file
         fname = os.path.join(d, "config.yaml")
-        cm = ConfigManager.from_dict(TEST_DICT)
+        cm = Config.from_dict(TEST_DICT)
         cm.to_yaml(fname)
         assert os.path.isfile(fname)
         with open(fname) as f:
@@ -507,7 +507,7 @@ def test_to_yaml():
 
 
 def test_to_yaml_string():
-    cm = ConfigManager.from_dict(TEST_DICT)
+    cm = Config.from_dict(TEST_DICT)
     serialized = cm.to_yaml()
     loaded_dict = yaml.safe_load(serialized)
     assert loaded_dict == cm
@@ -515,10 +515,10 @@ def test_to_yaml_string():
 
 
 def test_to_json():
-    with TemporaryDirectory(prefix="test_dot_config_") as d:
+    with TemporaryDirectory(prefix="test_holy_diver_") as d:
         # Prepare a temporary JSON file
         fname = os.path.join(d, "config.json")
-        cm = ConfigManager.from_dict(TEST_DICT)
+        cm = Config.from_dict(TEST_DICT)
         cm.to_json(fname)
         assert os.path.isfile(fname)
         with open(fname) as f:
@@ -528,7 +528,7 @@ def test_to_json():
 
 
 def test_to_json_string():
-    cm = ConfigManager.from_dict(TEST_DICT)
+    cm = Config.from_dict(TEST_DICT)
     serialized = cm.to_json()
     loaded_dict = json.loads(serialized)
     assert loaded_dict == cm
@@ -536,10 +536,10 @@ def test_to_json_string():
 
 
 def test_to_toml():
-    with TemporaryDirectory(prefix="test_dot_config_") as d:
+    with TemporaryDirectory(prefix="test_holy_diver_") as d:
         # Prepare a temporary TOML file
         fname = os.path.join(d, "config.toml")
-        cm = ConfigManager.from_dict(TEST_SECTIONS)
+        cm = Config.from_dict(TEST_SECTIONS)
         cm.to_toml(fname)
         assert os.path.isfile(fname)
         with open(fname) as f:
@@ -549,7 +549,7 @@ def test_to_toml():
 
 
 def test_to_toml_string():
-    cm = ConfigManager.from_dict(TEST_SECTIONS)
+    cm = Config.from_dict(TEST_SECTIONS)
     serialized = cm.to_toml()
     loaded_dict = toml.loads(serialized)
     assert loaded_dict == cm

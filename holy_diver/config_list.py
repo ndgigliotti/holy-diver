@@ -7,10 +7,10 @@ from collections import UserList
 from typing import Any, List, Optional, Union
 
 import yaml
-from dot_config.constants import DEEP_KEY, DEEP_KEY_PROPER
+from holy_diver.constants import DEEP_KEY, DEEP_KEY_PROPER
 
 
-class ConfigListManager(UserList):
+class ConfigList(UserList):
     _attr_idx_pat = re.compile(r"^[_]?([0-9]+)$")
 
     def check_str_idx(self, idx):
@@ -69,22 +69,22 @@ class ConfigListManager(UserList):
             Converted item.
 
         """
-        from dot_config.config_manager import ConfigManager
+        from holy_diver.config import Config
 
         if item is None:
             item = self.data
         if isinstance(item, dict):
-            return ConfigManager({k: self.convert_item(v) for k, v in item.items()})
+            return Config({k: self.convert_item(v) for k, v in item.items()})
         if isinstance(item, (list, tuple, set)):
             return type(self)([self.convert_item(x) for x in item])
         return item
 
-    def convert(self) -> "ConfigListManager":
+    def convert(self) -> "ConfigList":
         """Recursively convert nested dicts and lists to nested managers.
 
         Returns
         -------
-        ConfigListManager
+        ConfigList
             New hierarchy of managers and values.
 
         """
@@ -104,9 +104,9 @@ class ConfigListManager(UserList):
             Deconverted item.
 
         """
-        from dot_config.config_manager import ConfigManager
+        from holy_diver.config import Config
 
-        if isinstance(item, ConfigManager):
+        if isinstance(item, Config):
             return {k: self.deconvert_item(v) for k, v in item.items()}
         if isinstance(item, (type(self), tuple, set)):
             return [self.deconvert_item(x) for x in item]
@@ -132,13 +132,13 @@ class ConfigListManager(UserList):
             List of all keys in the configuration tree.
 
         """
-        from dot_config.config_manager import ConfigManager
+        from holy_diver.config import Config
 
         keys = []
         self = self.convert()
         for i in range(len(self.data)):
             keys.append(f"_{i}")
-            if isinstance(self.data[i], (type(self), ConfigManager)):
+            if isinstance(self.data[i], (type(self), Config)):
                 for k in self.data[i].deep_keys():
                     keys.append(f"_{i}.{k}")
         return keys
@@ -161,12 +161,12 @@ class ConfigListManager(UserList):
         return max([k.count(".") for k in self.deep_keys()])
 
     def to_string(self) -> str:
-        """Convert the ConfigListManager to a string.
+        """Convert the ConfigList to a string.
 
         Returns
         -------
         str
-            String representation of the ConfigListManager.
+            String representation of the ConfigList.
 
         """
         return pprint.pformat(self.deconvert())
@@ -178,8 +178,8 @@ class ConfigListManager(UserList):
         return self.to_string()
 
     @classmethod
-    def from_list(cls, list: List[Any]) -> "ConfigListManager":
-        """Create a ConfigListManager from a list.
+    def from_list(cls, list: List[Any]) -> "ConfigList":
+        """Create a ConfigList from a list.
 
         Parameters
         ----------
@@ -188,7 +188,7 @@ class ConfigListManager(UserList):
 
         Returns
         -------
-        ConfigListManager
+        ConfigList
             Nested managers created from a list.
 
         """
@@ -197,8 +197,8 @@ class ConfigListManager(UserList):
     @classmethod
     def from_yaml(
         cls, path: str, safe: bool = False, encoding: str = "utf-8"
-    ) -> "ConfigListManager":
-        """Create a ConfigListManager from a YAML file.
+    ) -> "ConfigList":
+        """Create a ConfigList from a YAML file.
 
         Parameters
         ----------
@@ -211,7 +211,7 @@ class ConfigListManager(UserList):
 
         Returns
         -------
-        ConfigListManager
+        ConfigList
             Nested managers created from a YAML file.
 
         Raises
@@ -226,13 +226,13 @@ class ConfigListManager(UserList):
         if isinstance(cfg, dict):
             raise TypeError(
                 "YAML file must encode a list, not a dict. "
-                "Use `ConfigManager.from_yaml` instead."
+                "Use `Config.from_yaml` instead."
             )
         return cls(cfg).convert()
 
     @classmethod
-    def from_json(cls, path: str, encoding: str = "utf-8") -> "ConfigListManager":
-        """Create a ConfigListManager from a JSON file.
+    def from_json(cls, path: str, encoding: str = "utf-8") -> "ConfigList":
+        """Create a ConfigList from a JSON file.
 
         Parameters
         ----------
@@ -243,7 +243,7 @@ class ConfigListManager(UserList):
 
         Returns
         -------
-        ConfigListManager
+        ConfigList
             Nested managers created from a JSON file.
 
         Raises
@@ -257,7 +257,7 @@ class ConfigListManager(UserList):
         if isinstance(cfg, dict):
             raise TypeError(
                 "JSON file must encode a list, not a dict. "
-                "Use `ConfigManager.from_json` instead."
+                "Use `Config.from_json` instead."
             )
         return cls(cfg).convert()
 

@@ -1,4 +1,4 @@
-* dot-config version:
+* holy-diver version:
 * Python version:
 * Operating System:
 
