@@ -34,7 +34,7 @@ To install holy-diver, simply run:
 
 .. code-block:: bash
 
-    pip install https://github.com/ndgigliotti/holy-diver.git
+    pip install holy-diver
 
 Usage
 =====
