@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=dot-config
+set SPHINXPROJ=holy-diver
 
 if "%1" == "" goto help
 

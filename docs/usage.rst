@@ -2,6 +2,6 @@
 Usage
 =====
 
-To use dot-config in a project::
+To use holy-diver in a project::
 
-    import dot-config
+    import holy-diver

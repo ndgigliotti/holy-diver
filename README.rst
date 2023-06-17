@@ -1,62 +1,53 @@
-.. image:: images/ellipsis.png
-        :width: 100px
-        :align: center
-
 ==========
-dot-config
+holy-diver
 ==========
 
 
-.. image:: https://img.shields.io/pypi/v/dot-config.svg
-        :target: https://pypi.python.org/pypi/dot-config
+.. image:: https://img.shields.io/pypi/v/holy-diver.svg
+        :target: https://pypi.python.org/pypi/holy-diver
 
-.. .. image:: https://img.shields.io/travis/ndgigliotti/dot-config.svg
-..         :target: https://travis-ci.com/ndgigliotti/dot-config
-
-.. .. image:: https://readthedocs.org/projects/dot-config/badge/?version=latest
-..         :target: https://dot-config.readthedocs.io/en/latest/?version=latest
-..         :alt: Documentation Status
-
-``dot-config`` is a Python library that provides a simple,
-recursively dot-accessible configuration manager for deeply nested configuration files.
-It also has some other convenient features, such handling default settings,
-checking for the presence of required keys, and initializing directly from YAML, JSON,
-and TOML files. It employs two main classes: ``ConfigManager`` and
-``ConfigListManager``. ``ConfigManager`` is a dictionary-like class that allows you to
-access nested keys using dot notation (i.e. recursively accessing keys as if they were
-attributes). ``ConfigListManager`` is a list-like class that allows you to access
-elements using indices and dot notation for nested keys. Both classes work together in harmony
-to make it as easy as possible to manage deeply nested configuration data.
+``holy-diver`` is a Python library that provides a simple, dot-accessible configuration
+manager, which especially handy for deeply nested configuration files.
+It's named after the song "Holy Diver" by Dio, due to its divine usefulness for diving
+deep into nested configuration data.
+It offers some convenient features such handling default settings, checking for the
+presence of required keys, and initializing directly from YAML, JSON, and TOML files.
+It employs two main classes: ``Config`` and ``ConfigList``. ``Config`` is a
+dictionary-like class that allows you to access nested keys using dot notation
+(i.e. recursively accessing keys as if they were attributes). ``ConfigList`` is a list-like
+class that allows you to access elements using indices and dot notation for nested keys.
+Both classes work together in harmony to make it as easy as possible to manage deeply
+nested configuration data.
 
 Main Features
 =============
 
 - Easy-to-use API for managing configuration data
-- Recursively dot-accessible dictionary-like ``ConfigManager`` class
-- Recursively dot-accessible list-like ``ConfigListManager`` class
+- Recursively dot-accessible dictionary-like ``Config`` class
+- Recursively dot-accessible list-like ``ConfigList`` class
 - Support for YAML, JSON, and TOML configuration file formats
 
 Installation
 ============
 
-To install dot-config, simply run:
+To install holy-diver, simply run:
 
 .. code-block:: bash
 
-    pip install https://github.com/ndgigliotti/dot-config.git
+    pip install https://github.com/ndgigliotti/holy-diver.git
 
 Usage
 =====
 
-ConfigManager
+Config
 -------------
 
-Here's a quick example of how to use the ``ConfigManager`` class. First create a
-``ConfigManager`` object from a dictionary:
+Here's a quick example of how to use the ``Config`` class. First create a
+``Config`` object from a dictionary:
 
 .. code-block:: python
 
-    from dot_config import ConfigManager
+    from holy_diver import Config
 
     config_data = {
         "database": {
@@ -69,7 +60,7 @@ Here's a quick example of how to use the ``ConfigManager`` class. First create a
         }
     }
 
-    config = ConfigManager.from_dict(config_data)
+    config = Config.from_dict(config_data)
 
 Access nested keys attribute-style using dot notation:
 
@@ -99,24 +90,24 @@ And of course, you can access them the old fashioned way:
     print(config["database"]["host"])  # Output: localhost
     print(config["database"]["port"])  # Output: 5432
 
-ConfigListManager
+ConfigList
 -----------------
 
-Here's a quick example of how to use the ``ConfigListManager`` class.
-Items in ``ConfigListManager`` can be accessed using normal indexing and
+Here's a quick example of how to use the ``ConfigList`` class.
+Items in ``ConfigList`` can be accessed using normal indexing and
 dot notation interchangeably. All indices can be accessed entirely with dot notation,
 which allows for easier handling of nested keys and data structures.
 
 .. code-block:: python
 
-    from dot_config import ConfigListManager
+    from holy_diver import ConfigList
 
     list_data = [
         {"name": "Alice", "age": 30},
         {"name": "Bob", "age": 25}
     ]
 
-    config_list = ConfigListManager.from_list(list_data)
+    config_list = ConfigList.from_list(list_data)
 
 Access elements using indices and dot notation for nested keys:
 
@@ -156,27 +147,27 @@ You can also look up nested keys directly:
 Loading from a Configuration File
 ---------------------------------
 
-You can load a configuration file in YAML format using the ``ConfigManager.from_yaml()`` method:
+You can load a configuration file in YAML format using the ``Config.from_yaml()`` method:
 
 .. code-block:: python
 
-    from dot_config import ConfigManager
+    from holy_diver import Config
 
-    config = ConfigManager.from_yaml("config.yaml")
+    config = Config.from_yaml("config.yaml")
 
 Loading a JSON file works in much the same way:
 
 .. code-block:: python
 
-    from dot_config import ConfigManager
+    from holy_diver import Config
 
-    config = ConfigManager.from_json("config.json")
+    config = Config.from_json("config.json")
 
 Alternative Constructors
 ------------------------
 It's generally recommended to use one of the ``from_*()`` constructors
-(e.g. ``from_dict()``, ``from_yaml()``) to create either a ``ConfigManager``
-or ``ConfigListManager``, because these class methods automatically
+(e.g. ``from_dict()``, ``from_yaml()``) to create either a ``Config``
+or ``ConfigList``, because these class methods automatically
 convert nested dictionaries and lists to manager classes. It shouldn't affect the
 functionality much if you use the main constructor, but it may cost you a few
 milliseconds of processing time down the road, as more conversions must be
@@ -187,7 +178,7 @@ Writing to a Configuration File
 
 You can dump the configuration in various formats: YAML, JSON, and TOML.
 Simply use the corresponding ``to_*()`` method (e.g. ``to_yaml()``, ``to_json()``)
-and supply a path. Note that ``ConfigListManager`` objects can only be dumped to
+and supply a path. Note that ``ConfigList`` objects can only be dumped to
 YAML and JSON.
 
 Converting and Deconverting
@@ -202,7 +193,7 @@ in vanilla Python data structures for serialization.
 
 .. code-block:: python
 
-    from dot_config import ConfigManager
+    from holy_diver import Config
 
     config_data = {
         "database": {
@@ -215,7 +206,7 @@ in vanilla Python data structures for serialization.
         }
     }
 
-    config = ConfigManager(config_data) # Create a manager using main constructor
+    config = Config(config_data) # Create a manager using main constructor
     converted = config.convert() # Convert to nested managers
     deconverted = converted.deconvert() # Deconvert to nested dicts and lists
 
@@ -228,14 +219,14 @@ in vanilla Python data structures for serialization.
 Setting Defaults
 ----------------
 You can set default values for keys that may not be present in the configuration data.
-Simply pass the ``defaults`` keyword argument to any of the ``ConfigManager`` constructors.
+Simply pass the ``defaults`` keyword argument to any of the ``Config`` constructors.
 This argument should be a dictionary of default values. If a key is not present in the
 configuration data, the default value will be used instead. The user configuration is recursively
 merged with the defaults to ensure that nested keys are handled properly.
 
 .. code-block:: python
 
-    from dot_config import ConfigManager
+    from holy_diver import Config
 
     default_config = {
         "database": {
@@ -246,7 +237,7 @@ merged with the defaults to ensure that nested keys are handled properly.
     }
     config_data = {"database": {"host": "localhost", "port": 5432}}
 
-    config = ConfigManager.from_dict(config_data, defaults=default_config)
+    config = Config.from_dict(config_data, defaults=default_config)
 
     print(config.database.host)  # Output: localhost
     print(config.database.port) # Output: 5432
@@ -255,12 +246,12 @@ merged with the defaults to ensure that nested keys are handled properly.
 
 Checking for Required Keys
 --------------------------
-One of the nice features of ``ConfigManager`` is that it allows you to check for the presence of
+One of the nice features of ``Config`` is that it allows you to check for the presence of
 required keys. This is especially useful because it works for nested keys using dot notation.
 
 .. code-block:: python
 
-    from dot_config import ConfigManager
+    from holy_diver import Config
 
     config_data = {
         "database": {
@@ -275,7 +266,7 @@ required keys. This is especially useful because it works for nested keys using 
 
     required_keys = ["database.host", "database.credentials.user", "database.auth_method"]
 
-    config = ConfigManager.from_dict(config_data) # Create a manager
+    config = Config.from_dict(config_data) # Create a manager
 
     config.check_required_keys(required_keys, if_missing="raise")
     # Output: KeyError: Configuration is missing required keys: ['database.auth_method']
@@ -296,11 +287,11 @@ Or, quietly get a list of missing keys by passing ``if_missing="return"``:
     print(missing_keys) # Output: ["database.auth_method"]
 
 You can also check for required keys by passing ``required_keys`` to any of the
-``ConfigManager`` constructors.
+``Config`` constructors.
 
 .. code-block:: python
 
-    config = ConfigManager.from_dict(config_data, required_keys=required_keys)
+    config = Config.from_dict(config_data, required_keys=required_keys)
     # Output: KeyError: Configuration is missing required keys: ['database.auth_method']
 
 
@@ -312,7 +303,7 @@ We appreciate your contributions to the project! Please submit a pull request or
 License
 =======
 
-``dot-config`` is released under the MIT License. See the LICENSE file for more details.
+``holy-diver`` is released under the MIT License. See the LICENSE file for more details.
 
 Credits
 -------

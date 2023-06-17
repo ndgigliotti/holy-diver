@@ -1,4 +1,4 @@
-"""Module for ConfigManager class and related functions."""
+"""Module for Config class and related functions."""
 import json
 import logging
 import os
@@ -10,7 +10,7 @@ from typing import Any, Iterable, List, Optional, Union
 
 import toml
 import yaml
-from dot_config.constants import DEEP_KEY_PROPER, DEEP_KEY, DUNDER, PRIVATE
+from holy_diver.constants import DEEP_KEY_PROPER, DEEP_KEY, DUNDER, PRIVATE
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ def deep_merge(d1: dict, d2: dict, in_place: bool = False) -> Union[dict, None]:
     return None if in_place else merged
 
 
-class ConfigManager(UserDict):
+class Config(UserDict):
     def __init__(
         self,
         data: dict = None,
@@ -137,12 +137,12 @@ class ConfigManager(UserDict):
 
     def deep_keys(self) -> List[str]:
         """Return a list of all keys using dot notation."""
-        from dot_config.config_list_manager import ConfigListManager
+        from holy_diver.config_list import ConfigList
 
         keys = []
         for k, v in self.convert().items():
             keys.append(k)
-            if isinstance(v, (type(self), ConfigListManager)):
+            if isinstance(v, (type(self), ConfigList)):
                 keys.extend([f"{k}.{i}" for i in v.deep_keys()])
         return keys
 
@@ -183,7 +183,7 @@ class ConfigManager(UserDict):
         other : dict
             Dictionary to update with.
         deep : bool, optional
-            Whether to update nested ConfigManagers, by default False.
+            Whether to update nested Configs, by default False.
 
         """
         if deep:
@@ -195,7 +195,7 @@ class ConfigManager(UserDict):
     def check_required_keys(
         self, keys: Iterable[str], if_missing: str = "raise"
     ) -> list[str]:
-        """Check that the ConfigManager has the required keys.
+        """Check that the Config has the required keys.
 
         Parameters
         ----------
@@ -240,7 +240,7 @@ class ConfigManager(UserDict):
         Parameters
         ----------
         item : Optional[Any], optional
-            Item to convert, by default None. If None, the ConfigManager itself is converted.
+            Item to convert, by default None. If None, the Config itself is converted.
 
         Returns
         -------
@@ -248,22 +248,22 @@ class ConfigManager(UserDict):
             Converted item.
 
         """
-        from dot_config.config_list_manager import ConfigListManager
+        from holy_diver.config_list import ConfigList
 
         if isinstance(item, dict):
             return type(self)({k: self.convert_item(v) for k, v in item.items()})
         if isinstance(item, (list, tuple, set)):
-            return ConfigListManager([self.convert_item(x) for x in item])
+            return ConfigList([self.convert_item(x) for x in item])
         return item
 
-    def convert(self) -> "ConfigManager":
+    def convert(self) -> "Config":
         """Recursively convert nested dicts and lists to nested managers.
 
         Returns a copy of self.
 
         Returns
         -------
-        ConfigManager
+        Config
             New hierarchy of managers and values.
 
         """
@@ -283,13 +283,13 @@ class ConfigManager(UserDict):
             Deconverted item.
 
         """
-        from dot_config.config_list_manager import ConfigListManager
+        from holy_diver.config_list import ConfigList
 
         if item is None:
             item = self
         if isinstance(item, type(self)):
             return {k: self.deconvert_item(v) for k, v in item.items()}
-        if isinstance(item, (ConfigListManager, tuple, set)):
+        if isinstance(item, (ConfigList, tuple, set)):
             return [self.deconvert_item(x) for x in item]
         return item
 
@@ -307,12 +307,12 @@ class ConfigManager(UserDict):
         return self.deconvert_item(self)
 
     def to_string(self) -> str:
-        """Convert the ConfigManager to a string.
+        """Convert the Config to a string.
 
         Returns
         -------
         str
-            String representation of the ConfigManager.
+            String representation of the Config.
 
         """
         return pprint.pformat(self.deconvert())
@@ -330,8 +330,8 @@ class ConfigManager(UserDict):
         defaults: dict = None,
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
-    ) -> "ConfigManager":
-        """Create nested ConfigManagers from a dictionary.
+    ) -> "Config":
+        """Create nested Configs from a dictionary.
 
         Parameters
         ----------
@@ -348,8 +348,8 @@ class ConfigManager(UserDict):
 
         Returns
         -------
-        ConfigManager
-            Nested ConfigManagers created from the dict.
+        Config
+            Nested Configs created from the dict.
 
         Raises
         ------
@@ -373,8 +373,8 @@ class ConfigManager(UserDict):
         if_missing: str = "raise",
         safe: bool = False,
         encoding: str = "utf-8",
-    ) -> "ConfigManager":
-        """Create nested ConfigManagers from a YAML file.
+    ) -> "Config":
+        """Create nested Configs from a YAML file.
 
         Parameters
         ----------
@@ -395,8 +395,8 @@ class ConfigManager(UserDict):
 
         Returns
         -------
-        ConfigManager
-            Nested ConfigManagers created from the YAML file.
+        Config
+            Nested Configs created from the YAML file.
 
         Raises
         ------
@@ -412,7 +412,7 @@ class ConfigManager(UserDict):
         if isinstance(data, list):
             raise TypeError(
                 "YAML file must encode a dict, not a list. "
-                "Use `ConfigListManager.from_yaml` instead."
+                "Use `ConfigList.from_yaml` instead."
             )
         return cls(
             data,
@@ -429,8 +429,8 @@ class ConfigManager(UserDict):
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
         encoding: str = "utf-8",
-    ) -> "ConfigManager":
-        """Create nested ConfigManagers from a JSON file.
+    ) -> "Config":
+        """Create nested Configs from a JSON file.
 
         Parameters
         ----------
@@ -449,8 +449,8 @@ class ConfigManager(UserDict):
 
         Returns
         -------
-        ConfigManager
-            Nested ConfigManagers created from the JSON file.
+        Config
+            Nested Configs created from the JSON file.
 
         Raises
         ------
@@ -465,7 +465,7 @@ class ConfigManager(UserDict):
         if isinstance(data, list):
             raise TypeError(
                 "JSON file must encode a dict, not a list. "
-                "Use `ConfigListManager.from_json` instead."
+                "Use `ConfigList.from_json` instead."
             )
         return cls(
             data,
@@ -482,7 +482,7 @@ class ConfigManager(UserDict):
         required_keys: Iterable[str] = None,
         if_missing: str = "raise",
         encoding: str = "utf-8",
-    ) -> "ConfigManager":
+    ) -> "Config":
         """Create nested managers from a TOML file.
 
         Parameters
@@ -502,7 +502,7 @@ class ConfigManager(UserDict):
 
         Returns
         -------
-        ConfigManager
+        Config
             Nested managers created from the TOML file.
 
         """

@@ -1,1 +1,1 @@
-"""Unit test package for dot-config."""
+"""Unit test package for holy-diver."""

@@ -8,13 +8,13 @@ Installation
 Stable release
 --------------
 
-To install dot-config, run this command in your terminal:
+To install holy-diver, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install dot-config
+    $ pip install holy-diver
 
-This is the preferred method to install dot-config, as it will always install the most recent stable release.
+This is the preferred method to install holy-diver, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -26,19 +26,19 @@ you through the process.
 From sources
 ------------
 
-The sources for dot-config can be downloaded from the `Github repo`_.
+The sources for holy-diver can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/ndgigliotti/dot-config
+    $ git clone git://github.com/ndgigliotti/holy-diver
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/ndgigliotti/dot-config/tarball/master
+    $ curl -OJL https://github.com/ndgigliotti/holy-diver/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/ndgigliotti/dot-config
-.. _tarball: https://github.com/ndgigliotti/dot-config/tarball/master
+.. _Github repo: https://github.com/ndgigliotti/holy-diver
+.. _tarball: https://github.com/ndgigliotti/holy-diver/tarball/master
