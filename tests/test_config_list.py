@@ -174,6 +174,64 @@ def test_depth():
     assert clm.depth == 2
 
 
+def test_search_no_regex():
+    test_data = [{"a": {"a": {"a": 1}}}, {"b": {"b": {"b": 2}}}]
+    clm = ConfigList(test_data).convert()
+    assert clm.search("a") == {
+        "_0.a": {"a": {"a": 1}},
+        "_0.a.a": {"a": 1},
+        "_0.a.a.a": 1,
+    }
+    assert clm.search("b") == {
+        "_1.b": {"b": {"b": 2}},
+        "_1.b.b": {"b": 2},
+        "_1.b.b.b": 2,
+    }
+    assert clm.search("a", return_values=True) == [{"a": {"a": 1}}, {"a": 1}, 1]
+    assert clm.search("b", return_values=True) == [{"b": {"b": 2}}, {"b": 2}, 2]
+
+
+def test_search_regex():
+    test_data = [{"a": {"a": {"a": 1}}}, {"b": {"b": {"b": 2}}}]
+    clm = ConfigList(test_data).convert()
+    assert clm.search("a", regex=True) == {
+        "_0.a": {"a": {"a": 1}},
+        "_0.a.a": {"a": 1},
+        "_0.a.a.a": 1,
+    }
+    assert clm.search("b", regex=True) == {
+        "_1.b": {"b": {"b": 2}},
+        "_1.b.b": {"b": 2},
+        "_1.b.b.b": 2,
+    }
+    assert clm.search("a", regex=True, return_values=True) == [
+        {"a": {"a": 1}},
+        {"a": 1},
+        1,
+    ]
+    assert clm.search("b", regex=True, return_values=True) == [
+        {"b": {"b": 2}},
+        {"b": 2},
+        2,
+    ]
+    assert clm.search(r"[ab]", regex=True) == {
+        "_0.a": {"a": {"a": 1}},
+        "_0.a.a": {"a": 1},
+        "_0.a.a.a": 1,
+        "_1.b": {"b": {"b": 2}},
+        "_1.b.b": {"b": 2},
+        "_1.b.b.b": 2,
+    }
+    assert clm.search(r"[ab]", regex=True, return_values=True) == [
+        {"a": {"a": 1}},
+        {"a": 1},
+        1,
+        {"b": {"b": 2}},
+        {"b": 2},
+        2,
+    ]
+
+
 def check_conversion_and_values(clm):
     assert len(clm) == 4
     assert isinstance(clm, ConfigList)

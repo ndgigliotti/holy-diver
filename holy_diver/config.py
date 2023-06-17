@@ -135,7 +135,7 @@ class Config(UserDict):
         else:
             self[name] = value
 
-    def deep_keys(self) -> List[str]:
+    def deep_keys(self) -> list[str]:
         """Return a list of all keys using dot notation."""
         from holy_diver.config_list import ConfigList
 
@@ -159,6 +159,10 @@ class Config(UserDict):
                 raise KeyError(f"Key '{key}' not found.")
         return value
 
+    def deep_items(self) -> list[str]:
+        """Return a list of tuples of deep keys and values."""
+        return [(k, self.deep_get(k)) for k in self.deep_keys()]
+
     def set_deep_key(self, key: str, value: Any) -> None:
         """Set a value using dot notation."""
         raise NotImplementedError("This method is not yet implemented.")
@@ -174,6 +178,41 @@ class Config(UserDict):
     def depth(self) -> int:
         """Return the depth of the configuration tree."""
         return max([k.count(".") for k in self.deep_keys()])
+
+    def search(
+        self, key: str, regex=False, return_values=False
+    ) -> Union[dict[str, Any], list[Any]]:
+        """Search for a key in the configuration tree.
+
+        Parameters
+        ----------
+        key : str
+            Key or key pattern to search for. Will be matched against
+            the lowest key in the hierarchy. If `regex` is False, must be
+            an exact match. If `regex` is True, will try to match the
+            lowest key using `re.search`.
+        regex : bool, optional
+            Whether to use regex pattern matching, by default False.
+        return_values : bool, optional
+            Whether to return a list of values instead of a dictionary,
+            by default False.
+
+        Returns
+        -------
+        Union[dict[str, Any], list[Any]]
+            Dictionary of keys and values, or list of values.
+
+        """
+        results = {}
+        for k, v in self.deep_items():
+            final_key = k.split(".")[-1]
+            if regex:
+                if re.search(key, final_key) is not None:
+                    results[k] = v
+            else:
+                if final_key == key:
+                    results[k] = v
+        return list(results.values()) if return_values else results
 
     def update(self, other: dict, deep: bool = False) -> None:
         """Update the configuration with a dictionary.

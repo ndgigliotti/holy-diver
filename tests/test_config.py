@@ -301,6 +301,56 @@ def test_depth():
     assert cm.depth == 4
 
 
+def test_search_no_regex():
+    test_data = {"a": {"a": {"a": 1}}, "b": {"b": {"b": 2}}}
+    cm = Config(data=test_data).convert()
+    assert cm.search("a") == {"a": {"a": {"a": 1}}, "a.a": {"a": 1}, "a.a.a": 1}
+    assert cm.search("b") == {"b": {"b": {"b": 2}}, "b.b": {"b": 2}, "b.b.b": 2}
+    assert cm.search("a", return_values=True) == [{"a": {"a": 1}}, {"a": 1}, 1]
+    assert cm.search("b", return_values=True) == [{"b": {"b": 2}}, {"b": 2}, 2]
+
+
+def test_search_regex():
+    test_data = {"a": {"a": {"a": 1}}, "b": {"b": {"b": 2}}}
+    cm = Config(data=test_data).convert()
+    assert cm.search("a", regex=True) == {
+        "a": {"a": {"a": 1}},
+        "a.a": {"a": 1},
+        "a.a.a": 1,
+    }
+    assert cm.search("b", regex=True) == {
+        "b": {"b": {"b": 2}},
+        "b.b": {"b": 2},
+        "b.b.b": 2,
+    }
+    assert cm.search("a", regex=True, return_values=True) == [
+        {"a": {"a": 1}},
+        {"a": 1},
+        1,
+    ]
+    assert cm.search("b", regex=True, return_values=True) == [
+        {"b": {"b": 2}},
+        {"b": 2},
+        2,
+    ]
+    assert cm.search(r"[ab]", regex=True) == {
+        "a": {"a": {"a": 1}},
+        "a.a": {"a": 1},
+        "a.a.a": 1,
+        "b": {"b": {"b": 2}},
+        "b.b": {"b": 2},
+        "b.b.b": 2,
+    }
+    assert cm.search(r"[ab]", regex=True, return_values=True) == [
+        {"a": {"a": 1}},
+        {"a": 1},
+        1,
+        {"b": {"b": 2}},
+        {"b": 2},
+        2,
+    ]
+
+
 def test_check_required_keys_raise():
     cm = Config(data=TEST_DICT, defaults=TEST_DEFAULTS)
     with pytest.raises(KeyError, match=MISSING_KEYS_MSG):
